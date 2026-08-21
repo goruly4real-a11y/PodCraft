@@ -18,7 +18,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlutterwave } from 'flutterwave-react-v3';
 import type { FlutterWaveResponse } from 'flutterwave-react-v3';
-import { ArrowLeft, Zap, Check, CreditCard, Clock } from 'lucide-react';
+import { ArrowLeft, Zap, Check, CreditCard, Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { SparkleEffect } from '@/components/animations/SparkleEffect';
@@ -26,6 +26,7 @@ import { FadeIn, StaggerList } from '@/components/animations/PageTransitions';
 import { animate, stagger } from 'animejs';
 import { useAuthStore, useUIStore } from '@/store';
 import { useCredits } from '@/hooks/useCredits';
+import { supabase } from '@/lib/supabase/client';
 import {
   creditPacks,
   generateTransactionRef,
@@ -40,13 +41,9 @@ interface Transaction {
   date: string;
   status: 'completed' | 'pending' | 'failed';
   credits: number;
+  type: string;
+  description: string;
 }
-
-const recentTransactions: Transaction[] = [
-  { id: '1', amount: 43500, date: 'Mar 15, 2026', status: 'completed', credits: 200 },
-  { id: '2', amount: 14500, date: 'Mar 10, 2026', status: 'completed', credits: 50 },
-  { id: '3', amount: 43500, date: 'Feb 28, 2026', status: 'completed', credits: 200 },
-];
 
 export default function BillingPage() {
   const navigate = useNavigate();
@@ -57,10 +54,55 @@ export default function BillingPage() {
   const [selectedPack, setSelectedPack] = useState<CreditPack | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [purchasedCredits, setPurchasedCredits] = useState(0);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
   const balanceRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
 
   const publicKey = getFlutterwavePublicKey();
+
+  // Fetch transactions from Supabase
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) {
+          console.error('Error fetching transactions:', error);
+          return;
+        }
+
+        const formattedTransactions: Transaction[] = (data || []).map((tx) => ({
+          id: tx.id,
+          amount: tx.amount,
+          date: new Date(tx.created_at).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+          status: tx.status as 'completed' | 'pending' | 'failed',
+          credits: tx.credits,
+          type: tx.type,
+          description: tx.description || '',
+        }));
+
+        setTransactions(formattedTransactions);
+      } catch (err) {
+        console.error('Error fetching transactions:', err);
+      } finally {
+        setLoadingTransactions(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [user]);
   
   const handleFlutterwavePayment = useFlutterwave({
     public_key: publicKey || '',
@@ -309,31 +351,49 @@ export default function BillingPage() {
             </h2>
             <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
               <CardContent className="p-0">
-                <StaggerList>
-                  {recentTransactions.map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="flex items-center justify-between p-4 border-b border-border/50 last:border-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                          <CreditCard className="w-5 h-5 text-secondary" />
+                {loadingTransactions ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : transactions.length === 0 ? (
+                  <div className="text-center p-8 text-muted-foreground">
+                    <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No transactions yet</p>
+                    <p className="text-sm">Purchase credits to see your history here</p>
+                  </div>
+                ) : (
+                  <StaggerList>
+                    {transactions.map((tx) => (
+                      <div
+                        key={tx.id}
+                        className="flex items-center justify-between p-4 border-b border-border/50 last:border-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                            <CreditCard className="w-5 h-5 text-secondary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">
+                              {tx.credits} credits
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {tx.date} • {tx.type === 'purchase' ? formatPrice(tx.amount) : tx.type}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">
-                            {tx.credits} credits
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {tx.date} • {formatPrice(tx.amount)}
-                          </p>
-                        </div>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          tx.status === 'completed' 
+                            ? 'bg-secondary/10 text-secondary' 
+                            : tx.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {tx.status}
+                        </span>
                       </div>
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-secondary/10 text-secondary">
-                        {tx.status}
-                      </span>
-                    </div>
-                  ))}
-                </StaggerList>
+                    ))}
+                  </StaggerList>
+                )}
               </CardContent>
             </Card>
           </div>

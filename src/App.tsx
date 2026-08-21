@@ -14,6 +14,7 @@ import NewPodcastPage from './pages/NewPodcastPage';
 import PodcastDetailPage from './pages/PodcastDetailPage';
 import LandingPage from './pages/LandingPage';
 import BillingPage from './pages/BillingPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -23,6 +24,7 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/speakers" element={<SpeakersPage />} />
         <Route path="/dashboard/speakers/new" element={<NewSpeakerPage />} />

@@ -11,8 +11,8 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ArrowLeft, Headphones, Upload, FileText, Loader2, X, Mic, Clock, Zap } from 'lucide-react';
 import { PodcastGenerationAnimation } from '@/components/podcasts/PodcastGenerationAnimation';
-import { InterstitialAd } from '@/components/ads';
 import { DURATION_OPTIONS, calculateCredits, formatCreditCost } from '@/lib/credits';
+import { supabase } from '@/lib/supabase/client';
 import gsap from 'gsap';
 
 export default function NewPodcastPage() {
@@ -37,7 +37,6 @@ export default function NewPodcastPage() {
     notes: '',
     script: '',
   });
-  const [showInterstitialAd, setShowInterstitialAd] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -163,26 +162,59 @@ export default function NewPodcastPage() {
 
       // Start generation with animation
       setGenerationStatus('generating');
+      setGenerationProgress(10);
 
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setGenerationProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
+      // Poll for actual progress from the database
+      const pollProgress = async () => {
+        const { data: podcastData } = await supabase
+          .from('podcasts')
+          .select('status, error_message')
+          .eq('id', podcast.id)
+          .single();
+
+        if (podcastData) {
+          if (podcastData.status === 'generating') {
+            setGenerationProgress((prev) => Math.min(prev + 10, 80));
+            return true; // Continue polling
+          } else if (podcastData.status === 'completed') {
+            setGenerationProgress(100);
+            setGenerationStatus('success');
+            return false; // Stop polling
+          } else if (podcastData.status === 'failed') {
+            setGenerationStatus('error');
+            showToast(podcastData.error_message || 'Generation failed', 'error');
+            return false; // Stop polling
           }
-          return prev + 5;
-        });
-      }, 200);
+        }
+        return true; // Continue polling
+      };
 
+      // Start polling
+      let pollInterval: NodeJS.Timeout;
+      const startPolling = async () => {
+        // Initial progress
+        setGenerationProgress(20);
+
+        // Poll every 2 seconds
+        pollInterval = setInterval(async () => {
+          const shouldContinue = await pollProgress();
+          if (!shouldContinue) {
+            clearInterval(pollInterval);
+          }
+        }, 2000);
+      };
+
+      await startPolling();
+
+      // Wait for generation to complete
       await generatePodcast(podcast.id, selectedDuration);
 
-      clearInterval(progressInterval);
+      // Clear polling interval
+      clearInterval(pollInterval);
+
+      // Final progress update
       setGenerationProgress(100);
       setGenerationStatus('success');
-
-      // Show interstitial ad after successful generation
-      setShowInterstitialAd(true);
 
       showToast('Podcast generated successfully!', 'success');
 
@@ -680,17 +712,6 @@ export default function NewPodcastPage() {
           </div>
         </div>
       )}
-
-      {/* Interstitial Ad */}
-      <InterstitialAd
-        isOpen={showInterstitialAd}
-        onClose={() => {
-          setShowInterstitialAd(false);
-          setTimeout(() => {
-            navigate('/dashboard/podcasts');
-          }, 500);
-        }}
-      />
     </div>
   );
 }

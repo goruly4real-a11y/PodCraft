@@ -21,8 +21,6 @@ import { useCredits } from '@/hooks/useCredits';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Plus, Mic, Headphones, Sparkles, ArrowRight, LogOut, Loader2, CreditCard } from 'lucide-react';
-import { AdBanner, VideoAd } from '@/components/ads';
-import { useState } from 'react';
 import { animate, stagger } from 'animejs';
 import { FloatingIcons } from '@/components/animations/FloatingIcons';
 import { SparkleEffect } from '@/components/animations/SparkleEffect';
@@ -37,7 +35,6 @@ export default function DashboardPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
-  const [showVideoAd, setShowVideoAd] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -117,15 +114,6 @@ export default function DashboardPage() {
         delay: 0.5,
       });
     }
-  }, []);
-
-  // Show video ad after delay
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowVideoAd(true);
-    }, 10000);
-
-    return () => clearTimeout(timer);
   }, []);
 
   const handleSignOut = async () => {
@@ -308,18 +296,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
         </div>
-
-        {/* Banner Ad */}
-        <div className="mt-8 flex justify-center">
-          <AdBanner network="adcombo" size="728x90" />
-        </div>
       </main>
-
-      {/* Video Ad */}
-      <VideoAd
-        isOpen={showVideoAd}
-        onClose={() => setShowVideoAd(false)}
-      />
     </div>
   );
 }
