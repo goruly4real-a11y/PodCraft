@@ -157,6 +157,7 @@ export default function NewPodcastPage() {
         source_material_url: sourceMaterialUrl,
         source_material_name: sourceMaterialName,
         speakerIds: selectedSpeakers,
+        duration: selectedDuration,
       });
 
       // Start generation with animation

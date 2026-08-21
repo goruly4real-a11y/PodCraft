@@ -215,6 +215,7 @@ export function useCredits() {
     loading,
     fetchCredits,
     hasEnoughCredits,
+    addCredits,
     deductCredits,
     refundCredits,
     getCreditCost,

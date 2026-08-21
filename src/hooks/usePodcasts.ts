@@ -169,6 +169,7 @@ export function usePodcasts() {
       source_material_url?: string | null;
       source_material_name?: string | null;
       speakerIds: string[];  // Array of speaker IDs to associate
+      duration?: number | null;  // Duration in minutes
     }
   ) => {
     setLoading(true);
@@ -185,6 +186,7 @@ export function usePodcasts() {
         script: podcast.script || null,
         source_material_url: podcast.source_material_url || null,
         source_material_name: podcast.source_material_name || null,
+        duration: podcast.duration || null,
         status: 'draft',  // New podcasts start as drafts
       })
       .select()
