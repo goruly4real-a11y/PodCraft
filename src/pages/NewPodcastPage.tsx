@@ -157,7 +157,6 @@ export default function NewPodcastPage() {
         source_material_url: sourceMaterialUrl,
         source_material_name: sourceMaterialName,
         speakerIds: selectedSpeakers,
-        duration: selectedDuration,
       });
 
       // Start generation with animation
@@ -190,7 +189,7 @@ export default function NewPodcastPage() {
       };
 
       // Start polling
-      let pollInterval: NodeJS.Timeout;
+      let pollInterval: ReturnType<typeof setInterval> | undefined;
       const startPolling = async () => {
         // Initial progress
         setGenerationProgress(20);
@@ -210,7 +209,7 @@ export default function NewPodcastPage() {
       await generatePodcast(podcast.id, selectedDuration);
 
       // Clear polling interval
-      clearInterval(pollInterval);
+      if (pollInterval) clearInterval(pollInterval);
 
       // Final progress update
       setGenerationProgress(100);

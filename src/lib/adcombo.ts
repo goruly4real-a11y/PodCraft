@@ -139,7 +139,7 @@ export function showInterstitial(
  */
 export function showVideoAd(
   containerId: string,
-  videoUrl?: string
+  _videoUrl?: string
 ): void {
   const container = document.getElementById(containerId);
   if (!container) {

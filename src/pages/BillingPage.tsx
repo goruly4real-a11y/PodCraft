@@ -17,14 +17,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlutterwave } from 'flutterwave-react-v3';
-import type { FlutterWaveResponse } from 'flutterwave-react-v3';
+import { FlutterWaveTypes } from 'flutterwave-react-v3';
+type FlutterWaveResponse = FlutterWaveTypes.FlutterWaveResponse;
 import { ArrowLeft, Zap, Check, CreditCard, Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { SparkleEffect } from '@/components/animations/SparkleEffect';
 import { FadeIn, StaggerList } from '@/components/animations/PageTransitions';
 import { animate, stagger } from 'animejs';
-import { useAuthStore, useUIStore } from '@/store';
+import { useAuthStore, useUIStore, useCreditStore } from '@/store';
 import { useCredits } from '@/hooks/useCredits';
 import { supabase } from '@/lib/supabase/client';
 import {
@@ -48,7 +49,8 @@ interface Transaction {
 export default function BillingPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { credits, addCredits } = useCredits();
+  const { credits } = useCredits();
+  const { addCredits } = useCreditStore();
   const { showToast } = useUIStore();
   
   const [selectedPack, setSelectedPack] = useState<CreditPack | null>(null);

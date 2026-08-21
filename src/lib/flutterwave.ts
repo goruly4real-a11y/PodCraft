@@ -16,7 +16,8 @@
  * ============================================================================
  */
 
-import type { FlutterWaveResponse } from 'flutterwave-react-v3';
+import { FlutterWaveTypes } from 'flutterwave-react-v3';
+type FlutterWaveResponse = FlutterWaveTypes.FlutterWaveResponse;
 
 /**
  * Credit pack pricing configuration
