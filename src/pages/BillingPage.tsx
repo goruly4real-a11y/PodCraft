@@ -1,32 +1,15 @@
-/**
- * ============================================================================
- * BILLING PAGE
- * ============================================================================
- * 
- * Credit management and payment processing page using Flutterwave.
- * Features:
- * - 3D tilt card effects on hover
- * - Animated credit counter with anime.js
- * - Sparkle effect on buy buttons
- * - Real Flutterwave payment integration
- * - Transaction history display
- * 
- * ============================================================================
- */
-
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useFlutterwave } from 'flutterwave-react-v3';
 import { FlutterWaveTypes } from 'flutterwave-react-v3';
 type FlutterWaveResponse = FlutterWaveTypes.FlutterWaveResponse;
-import { ArrowLeft, Zap, Check, CreditCard, Clock, Loader2 } from 'lucide-react';
+import { Zap, Check, CreditCard, Clock, Loader2, Mic, Headphones, Home, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { SparkleEffect } from '@/components/animations/SparkleEffect';
-import { FadeIn, StaggerList } from '@/components/animations/PageTransitions';
 import { animate, stagger } from 'animejs';
 import { useAuthStore, useUIStore, useCreditStore } from '@/store';
 import { useCredits } from '@/hooks/useCredits';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase/client';
 import {
   creditPacks,
@@ -35,6 +18,7 @@ import {
   formatPrice,
   type CreditPack,
 } from '@/lib/flutterwave';
+import { Waveform } from '@/components/animations/Waveform';
 
 interface Transaction {
   id: string;
@@ -48,7 +32,9 @@ interface Transaction {
 
 export default function BillingPage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const location = useLocation();
+  const { user, signOut } = useAuth();
+  const { user: authUser } = useAuthStore();
   const { credits } = useCredits();
   const { addCredits } = useCreditStore();
   const { showToast } = useUIStore();
@@ -62,17 +48,17 @@ export default function BillingPage() {
   const cardsRef = useRef<HTMLDivElement>(null);
 
   const publicKey = getFlutterwavePublicKey();
+  const currentUser = user || authUser;
 
-  // Fetch transactions from Supabase
   useEffect(() => {
     const fetchTransactions = async () => {
-      if (!user) return;
+      if (!currentUser) return;
 
       try {
         const { data, error } = await supabase
           .from('transactions')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', currentUser.id)
           .order('created_at', { ascending: false })
           .limit(10);
 
@@ -104,7 +90,7 @@ export default function BillingPage() {
     };
 
     fetchTransactions();
-  }, [user]);
+  }, [currentUser]);
   
   const handleFlutterwavePayment = useFlutterwave({
     public_key: publicKey || '',
@@ -112,9 +98,9 @@ export default function BillingPage() {
     amount: selectedPack?.price || 0,
     currency: 'NGN',
     customer: {
-      email: user?.email || '',
+      email: currentUser?.email || '',
       phone_number: '',
-      name: user?.user_metadata?.full_name || user?.email || 'User',
+      name: currentUser?.user_metadata?.full_name || currentUser?.email || 'User',
     },
     customizations: {
       title: 'PodCraft',
@@ -145,17 +131,16 @@ export default function BillingPage() {
       const cards = Array.from(cardsRef.current.children);
       animate(cards, {
         opacity: [0, 1],
-        translateY: [30, 0],
-        scale: [0.95, 1],
-        duration: 600,
-        delay: stagger(100),
+        translateY: [20, 0],
+        duration: 500,
+        delay: stagger(80),
         ease: 'outQuad',
       });
     }
   }, []);
 
   const handlePurchase = (pack: CreditPack) => {
-    if (!user) {
+    if (!currentUser) {
       showToast('Please log in to purchase credits', 'error');
       navigate('/login');
       return;
@@ -198,26 +183,74 @@ export default function BillingPage() {
     }
   }, [selectedPack]);
 
-  return (
-    <div className="min-h-screen bg-background">
-      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="container mx-auto px-4 h-14 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/dashboard')}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-lg font-semibold">Billing</h1>
-        </div>
-      </nav>
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <FadeIn>
-          <Card className="mb-8 border-border/50 bg-card/50 backdrop-blur-sm">
+  const navItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/dashboard/speakers', label: 'Speakers', icon: Mic },
+    { href: '/dashboard/podcasts', label: 'Podcasts', icon: Headphones },
+    { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <aside className="w-64 border-r border-border/50 bg-card/30 flex flex-col">
+        <div className="p-6 border-b border-border/50">
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Mic className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-xl font-bold font-display">PodCraft</span>
+          </Link>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-1">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="p-4 border-t border-border/50">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+              {currentUser?.email?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{currentUser?.email?.split('@')[0]}</p>
+              <p className="text-xs text-muted-foreground truncate">{currentUser?.email}</p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="shrink-0">
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
+        <div className="p-8 max-w-4xl">
+          {/* Credit Balance */}
+          <Card className="mb-8 border-border/50 bg-card/50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 font-display">
                 <Zap className="w-5 h-5 text-primary" />
                 Your Credits
               </CardTitle>
@@ -229,7 +262,7 @@ export default function BillingPage() {
               <div className="flex items-baseline gap-2 mb-4">
                 <span
                   ref={balanceRef}
-                  className="text-5xl font-bold text-primary"
+                  className="text-5xl font-bold text-primary font-mono"
                 >
                   0
                 </span>
@@ -237,80 +270,64 @@ export default function BillingPage() {
                   credits remaining
                 </span>
               </div>
-              <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-2">
                 <div
                   className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
                   style={{ width: `${(credits / 200) * 100}%` }}
                 />
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-muted-foreground">
                 {credits} of 200 monthly credits used
               </p>
             </CardContent>
           </Card>
-        </FadeIn>
 
-        <FadeIn delay={200}>
-          <h2 className="text-2xl font-bold mb-6">Purchase Credits</h2>
-        </FadeIn>
+          {/* Purchase Credits */}
+          <h2 className="text-2xl font-bold mb-6 font-display">Purchase Credits</h2>
 
-        <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {creditPacks.map((pack) => (
-            <Card
-              key={pack.id}
-              className={`relative border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer ${
-                pack.popular ? 'border-secondary/50 shadow-secondary/10' : ''
-              } ${selectedPack?.id === pack.id ? 'scale-[1.02]' : ''}`}
-              style={{
-                transform: `perspective(1000px) rotateX(0deg) rotateY(0deg)`,
-              }}
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / rect.width - 0.5;
-                const y = (e.clientY - rect.top) / rect.height - 0.5;
-                e.currentTarget.style.transform = `perspective(1000px) rotateX(${-y * 10}deg) rotateY(${x * 10}deg) scale(1.02)`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform =
-                  'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
-              }}
-            >
-              {pack.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-full">
-                  Most Popular
-                </div>
-              )}
-              <CardHeader className="text-center">
-                <CardTitle className="text-xl">{pack.name}</CardTitle>
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-bold">{formatPrice(pack.price)}</span>
-                </div>
-                <CardDescription>
-                  {pack.credits} credits
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 mb-6 text-sm">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-secondary" />
-                    <span>{pack.credits} podcast credits</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-secondary" />
-                    <span>No expiration</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-secondary" />
-                    <span>Priority support</span>
-                  </li>
-                </ul>
-                <SparkleEffect className="w-full">
+          <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {creditPacks.map((pack) => (
+              <Card
+                key={pack.id}
+                className={`relative border-border/50 bg-card/50 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${
+                  pack.popular ? 'border-secondary/50' : ''
+                } ${selectedPack?.id === pack.id ? 'scale-[1.02]' : ''}`}
+              >
+                {pack.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-full">
+                    Most Popular
+                  </div>
+                )}
+                <CardHeader className="text-center">
+                  <CardTitle className="text-xl font-display">{pack.name}</CardTitle>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-4xl font-bold font-mono">{formatPrice(pack.price)}</span>
+                  </div>
+                  <CardDescription>
+                    {pack.credits} credits
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 mb-6 text-sm">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-success" />
+                      <span>{pack.credits} podcast credits</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-success" />
+                      <span>No expiration</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-success" />
+                      <span>Priority support</span>
+                    </li>
+                  </ul>
                   <Button
                     className="w-full"
                     variant={pack.popular ? 'default' : 'outline'}
                     style={
                       pack.popular
-                        ? { backgroundColor: pack.color, color: '#0F172A' }
+                        ? { backgroundColor: pack.color, color: '#0B0F19' }
                         : { borderColor: pack.color, color: pack.color }
                     }
                     onClick={() => handlePurchase(pack)}
@@ -325,33 +342,33 @@ export default function BillingPage() {
                       'Buy Now'
                     )}
                   </Button>
-                </SparkleEffect>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {showSuccess && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <div className="bg-card p-8 rounded-2xl border border-border/50 shadow-2xl text-center animate-in zoom-in-95 duration-200">
-              <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
-                <Check className="w-8 h-8 text-secondary" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Purchase Successful!</h3>
-              <p className="text-muted-foreground">
-                {purchasedCredits} credits have been added to your account.
-              </p>
-            </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        )}
 
-        <FadeIn delay={400}>
+          {/* Success Modal */}
+          {showSuccess && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+              <div className="bg-card p-8 rounded-2xl border border-border/50 shadow-2xl text-center animate-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-success" />
+                </div>
+                <h3 className="text-xl font-bold mb-2 font-display">Purchase Successful!</h3>
+                <p className="text-muted-foreground">
+                  {purchasedCredits} credits have been added to your account.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Transaction History */}
           <div>
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 font-display">
               <Clock className="w-6 h-6 text-muted-foreground" />
               Recent Transactions
             </h2>
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+            <Card className="border-border/50 bg-card/50">
               <CardContent className="p-0">
                 {loadingTransactions ? (
                   <div className="flex items-center justify-center p-8">
@@ -364,42 +381,45 @@ export default function BillingPage() {
                     <p className="text-sm">Purchase credits to see your history here</p>
                   </div>
                 ) : (
-                  <StaggerList>
-                    {transactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex items-center justify-between p-4 border-b border-border/50 last:border-0"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                            <CreditCard className="w-5 h-5 text-secondary" />
-                          </div>
-                          <div>
-                            <p className="font-medium">
-                              {tx.credits} credits
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {tx.date} • {tx.type === 'purchase' ? formatPrice(tx.amount) : tx.type}
-                            </p>
-                          </div>
+                  transactions.map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="flex items-center justify-between p-4 border-b border-border/50 last:border-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 text-primary" />
                         </div>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          tx.status === 'completed' 
-                            ? 'bg-secondary/10 text-secondary' 
-                            : tx.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {tx.status}
-                        </span>
+                        <div>
+                          <p className="font-medium font-mono">
+                            {tx.credits} credits
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {tx.date} · {tx.type === 'purchase' ? formatPrice(tx.amount) : tx.type}
+                          </p>
+                        </div>
                       </div>
-                    ))}
-                  </StaggerList>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        tx.status === 'completed' 
+                          ? 'bg-success/10 text-success' 
+                          : tx.status === 'pending'
+                          ? 'bg-yellow-500/10 text-yellow-500'
+                          : 'bg-destructive/10 text-destructive'
+                      }`}>
+                        {tx.status}
+                      </span>
+                    </div>
+                  ))
                 )}
               </CardContent>
             </Card>
           </div>
-        </FadeIn>
+
+          {/* Waveform accent */}
+          <div className="flex justify-center mt-12 opacity-30">
+            <Waveform barCount={60} height={24} color="var(--primary)" animated={false} />
+          </div>
+        </div>
       </main>
     </div>
   );

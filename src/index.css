@@ -1,22 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0F172A;
-  --foreground: #F8FAFC;
-  --card: #1E293B;
-  --card-foreground: #F8FAFC;
+  --background: #0B0F19;
+  --foreground: #F1F5F9;
+  --card: #111827;
+  --card-foreground: #F1F5F9;
   --primary: #F59E0B;
-  --primary-foreground: #0F172A;
-  --secondary: #10B981;
-  --secondary-foreground: #F8FAFC;
-  --accent: #8B5CF6;
-  --accent-foreground: #F8FAFC;
-  --muted: #334155;
+  --primary-foreground: #0B0F19;
+  --secondary: #6366F1;
+  --secondary-foreground: #F1F5F9;
+  --accent: #F59E0B;
+  --accent-foreground: #0B0F19;
+  --muted: #1E293B;
   --muted-foreground: #94A3B8;
-  --border: #334155;
+  --border: #1E293B;
   --ring: #F59E0B;
   --destructive: #EF4444;
-  --destructive-foreground: #F8FAFC;
+  --destructive-foreground: #F1F5F9;
+  --success: #22C55E;
+  --wave: #6366F1;
 }
 
 @theme inline {
@@ -36,16 +38,27 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-wave: var(--wave);
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
 }
 
 * {
@@ -57,8 +70,8 @@ html {
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -67,7 +80,7 @@ html {
 
 ::-webkit-scrollbar-thumb {
   background: var(--muted);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -95,4 +108,19 @@ html {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+@keyframes waveform {
+  0% { d: path("M0,20 Q25,5 50,20 T100,20 T150,20 T200,20"); }
+  50% { d: path("M0,20 Q25,35 50,20 T100,20 T150,20 T200,20"); }
+  100% { d: path("M0,20 Q25,5 50,20 T100,20 T150,20 T200,20"); }
+}
+
+@keyframes wave-pulse {
+  0%, 100% { opacity: 0.3; transform: scaleX(1); }
+  50% { opacity: 0.6; transform: scaleX(1.02); }
+}
+
+.animate-wave-pulse {
+  animation: wave-pulse 4s ease-in-out infinite;
 }

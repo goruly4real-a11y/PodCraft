@@ -27,32 +27,32 @@ const features = [
     title: 'Studio Quality',
     description:
       'Professional audio quality with automatic noise reduction and mastering.',
-    color: 'text-accent',
-    bg: 'bg-accent/10',
+    color: 'text-primary',
+    bg: 'bg-primary/10',
   },
   {
     icon: Wand2,
     title: 'One-Click Generate',
     description:
       'Create full podcast episodes with a single click. No editing required.',
-    color: 'text-primary',
-    bg: 'bg-primary/10',
+    color: 'text-secondary',
+    bg: 'bg-secondary/10',
   },
   {
     icon: Users,
     title: 'Multiple Speakers',
     description:
       'Create dynamic conversations with multiple AI speakers.',
-    color: 'text-secondary',
-    bg: 'bg-secondary/10',
+    color: 'text-primary',
+    bg: 'bg-primary/10',
   },
   {
     icon: BarChart3,
     title: 'Analytics',
     description:
       'Track your podcast performance with detailed analytics.',
-    color: 'text-accent',
-    bg: 'bg-accent/10',
+    color: 'text-secondary',
+    bg: 'bg-secondary/10',
   },
 ];
 
@@ -63,7 +63,6 @@ export function FeaturesSection() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Title reveal
       gsap.from(titleRef.current, {
         opacity: 0,
         y: 30,
@@ -74,21 +73,14 @@ export function FeaturesSection() {
         },
       });
 
-      // Cards - 3D flip in with stagger
       const cards = cardsRef.current?.children;
       if (cards) {
-        gsap.set(Array.from(cards), { rotationX: -15, opacity: 0, y: 50 });
-
-        gsap.to(Array.from(cards), {
-          rotationX: 0,
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: {
-            each: 0.15,
-            from: 'start',
-          },
-          ease: 'back.out(1.7)',
+        gsap.from(Array.from(cards), {
+          opacity: 0,
+          y: 40,
+          duration: 0.7,
+          stagger: 0.1,
+          ease: 'power3.out',
           scrollTrigger: {
             trigger: cardsRef.current,
             start: 'top 80%',
@@ -105,7 +97,7 @@ export function FeaturesSection() {
       <div className="max-w-6xl mx-auto">
         <h2
           ref={titleRef}
-          className="text-3xl md:text-5xl font-bold text-center mb-16"
+          className="text-3xl md:text-5xl font-bold text-center mb-16 font-display"
         >
           Everything You Need to{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
@@ -116,47 +108,18 @@ export function FeaturesSection() {
         <div
           ref={cardsRef}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          style={{ perspective: '1000px' }}
         >
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="group p-6 rounded-xl bg-card/50 border border-border/50 backdrop-blur-sm hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
-              onMouseEnter={(e) => {
-                gsap.to(e.currentTarget, {
-                  y: -8,
-                  scale: 1.02,
-                  duration: 0.3,
-                  ease: 'power2.out',
-                });
-                gsap.to(e.currentTarget.querySelector('.icon-container'), {
-                  scale: 1.15,
-                  rotation: 5,
-                  duration: 0.3,
-                  ease: 'back.out(1.7)',
-                });
-              }}
-              onMouseLeave={(e) => {
-                gsap.to(e.currentTarget, {
-                  y: 0,
-                  scale: 1,
-                  duration: 0.3,
-                  ease: 'power2.out',
-                });
-                gsap.to(e.currentTarget.querySelector('.icon-container'), {
-                  scale: 1,
-                  rotation: 0,
-                  duration: 0.3,
-                  ease: 'power2.out',
-                });
-              }}
+              className="group p-6 rounded-xl bg-card/50 border border-border/50 backdrop-blur-sm hover:border-primary/30 transition-all duration-300"
             >
               <div
-                className={`icon-container w-12 h-12 rounded-lg ${feature.bg} flex items-center justify-center mb-4`}
+                className={`icon-container w-12 h-12 rounded-lg ${feature.bg} flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110`}
               >
                 <feature.icon className={`w-6 h-6 ${feature.color}`} />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+              <h3 className="text-xl font-semibold mb-2 font-display">{feature.title}</h3>
               <p className="text-muted-foreground">{feature.description}</p>
             </div>
           ))}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePodcasts } from '@/hooks/usePodcasts';
 import { useSpeakers } from '@/hooks/useSpeakers';
@@ -8,14 +8,15 @@ import { AudioPlayer } from '@/components/podcasts/AudioPlayer';
 import { TranscriptViewer } from '@/components/podcasts/TranscriptViewer';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { ArrowLeft, Mic, Headphones, Loader2, Download, Trash2, Share2 } from 'lucide-react';
+import { ArrowLeft, Mic, Headphones, Loader2, Download, Trash2, Share2, Home, CreditCard, LogOut } from 'lucide-react';
 
 const SPEAKER_COLORS = ['#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#06B6D4'];
 
 export default function PodcastDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const { user, signOut, isAuthenticated, loading: authLoading } = useAuth();
   const { currentPodcast, fetchPodcast, deletePodcast, loading } = usePodcasts();
   const { speakers, fetchSpeakers } = useSpeakers();
   const { showToast } = useUIStore();
@@ -102,29 +103,86 @@ export default function PodcastDetailPage() {
     );
   }
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const navItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/dashboard/speakers', label: 'Speakers', icon: Mic },
+    { href: '/dashboard/podcasts', label: 'Podcasts', icon: Headphones },
+    { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center gap-4">
-          <Link to="/dashboard/podcasts">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
-              <Headphones className="w-5 h-5 text-secondary" />
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <aside className="w-64 border-r border-border/50 bg-card/30 flex flex-col">
+        <div className="p-6 border-b border-border/50">
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Mic className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-xl font-bold truncate max-w-md">
-              {currentPodcast.title}
-            </span>
+            <span className="text-xl font-bold font-display">PodCraft</span>
+          </Link>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-1">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href || location.pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="p-4 border-t border-border/50">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+              {user?.email?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user?.email?.split('@')[0]}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="shrink-0">
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         </div>
-      </header>
+      </aside>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="flex-1 overflow-auto">
+        <div className="p-8 max-w-4xl">
+          {/* Back button + Title */}
+          <div className="flex items-center gap-4 mb-8">
+            <Link to="/dashboard/podcasts">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold font-display truncate">
+                {currentPodcast.title}
+              </h1>
+              <p className="text-muted-foreground">
+                {currentPodcast.topic || 'No topic specified'}
+              </p>
+            </div>
+          </div>
         <div className="space-y-6">
           {/* Podcast Info */}
           <Card className="border-border/50 bg-card/50">

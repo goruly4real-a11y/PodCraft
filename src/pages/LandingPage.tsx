@@ -7,7 +7,7 @@ import { FeaturesSection } from '@/components/landing/FeaturesSection';
 import { SpeakersShowcase } from '@/components/landing/SpeakersShowcase';
 import { CTASection } from '@/components/landing/CTASection';
 import { GlowOrbs } from '@/components/animations/GlowOrbs';
-import { InteractiveCursor } from '@/components/cursor/InteractiveCursor';
+import { Waveform } from '@/components/animations/Waveform';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -17,19 +17,18 @@ export default function LandingPage() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Nav slide down
       gsap.from(navRef.current, {
-        y: -100,
+        y: -80,
+        opacity: 0,
         duration: 0.8,
         ease: 'power3.out',
         delay: 0.1,
       });
 
-      // Footer reveal
       if (footerRef.current) {
         gsap.from(Array.from(footerRef.current.children), {
           opacity: 0,
-          y: 30,
+          y: 20,
           duration: 0.6,
           stagger: 0.1,
           ease: 'power3.out',
@@ -46,8 +45,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <InteractiveCursor />
-
       <nav
         ref={navRef}
         className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50"
@@ -57,7 +54,7 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Mic className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-xl font-bold">PodCraft</span>
+            <span className="text-xl font-bold font-display">PodCraft</span>
           </div>
           <div className="flex items-center gap-6">
             <a
@@ -83,7 +80,7 @@ export default function LandingPage() {
       </nav>
 
       <main>
-        <GlowOrbs count={4} />
+        <GlowOrbs count={3} />
 
         <HeroSection />
 
@@ -106,7 +103,10 @@ export default function LandingPage() {
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Mic className="w-5 h-5 text-primary" />
               </div>
-              <span className="font-semibold">PodCraft</span>
+              <span className="font-semibold font-display">PodCraft</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Waveform barCount={20} height={16} color="var(--muted-foreground)" animated={false} />
             </div>
             <div className="flex items-center gap-6">
               <a
