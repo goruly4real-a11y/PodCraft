@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Fonts -->
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Italiana&amp;family=Jura:wght@300;500&amp;family=JetBrains+Mono&amp;display=swap');
+      
+      .title-text {
+        font-family: 'Italiana', serif;
+        font-size: 32px;
+        fill: #F1F5F9;
+        letter-spacing: 12px;
+        text-anchor: middle;
+      }
+      
+      .subtitle-text {
+        font-family: 'Jura', sans-serif;
+        font-weight: 300;
+        font-size: 8.5px;
+        fill: #64748B;
+        letter-spacing: 4px;
+        text-anchor: middle;
+      }
+      
+      .mono-text {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 6px;
+        fill: rgba(100, 116, 139, 0.45);
+        text-anchor: middle;
+      }
+    </style>
+
+    <!-- Gradients -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.08" />
+      <stop offset="60%" stop-color="#6366F1" stop-opacity="0.03" />
+      <stop offset="100%" stop-color="#0B0F19" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="centerNode" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="1" />
+      <stop offset="40%" stop-color="#F59E0B" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Deep Background -->
+  <rect width="512" height="512" fill="#0B0F19" />
+  <rect width="512" height="512" fill="url(#bgGlow)" />
+
+  <!-- Grid lines (Clinical / Scientific Observation) -->
+  <g opacity="0.07" stroke="#64748B" stroke-width="0.5">
+    <line x1="128" y1="80" x2="128" y2="400" />
+    <line x1="192" y1="80" x2="192" y2="400" />
+    <line x1="256" y1="80" x2="256" y2="400" />
+    <line x1="320" y1="80" x2="320" y2="400" />
+    <line x1="384" y1="80" x2="384" y2="400" />
+  </g>
+
+  <!-- Horizontal Axis -->
+  <line x1="100" y1="240" x2="412" y2="240" stroke="#64748B" stroke-width="0.5" stroke-dasharray="2 4" opacity="0.2" />
+
+  <!-- Concentric Sound Arcs -->
+  <!-- Upper radiating arcs (fading from signal amber to wave indigo) -->
+  <g fill="none">
+    <!-- Outer Arcs -->
+    <path d="M 128 240 A 128 128 0 0 1 384 240" stroke="#6366F1" stroke-width="0.8" opacity="0.15" />
+    <path d="M 140 240 A 116 116 0 0 1 372 240" stroke="#6366F1" stroke-width="0.9" opacity="0.18" />
+    <path d="M 152 240 A 104 104 0 0 1 360 240" stroke="#6366F1" stroke-width="1.0" opacity="0.22" />
+    <path d="M 164 240 A 92 92 0 0 1 348 240" stroke="#6366F1" stroke-width="1.1" opacity="0.26" />
+    <path d="M 176 240 A 80 80 0 0 1 336 240" stroke="#6366F1" stroke-width="1.2" opacity="0.30" />
+    
+    <!-- Transition Arcs -->
+    <path d="M 188 240 A 68 68 0 0 1 324 240" stroke="#F59E0B" stroke-width="1.3" opacity="0.35" />
+    <path d="M 200 240 A 56 56 0 0 1 312 240" stroke="#F59E0B" stroke-width="1.4" opacity="0.42" />
+    <path d="M 212 240 A 44 44 0 0 1 300 240" stroke="#F59E0B" stroke-width="1.6" opacity="0.50" />
+    <path d="M 224 240 A 32 32 0 0 1 288 240" stroke="#F59E0B" stroke-width="1.8" opacity="0.60" />
+    <path d="M 236 240 A 20 20 0 0 1 276 240" stroke="#F59E0B" stroke-width="2.0" opacity="0.70" />
+  </g>
+
+  <!-- Lower reflecting arcs (subtler, cool wave indigo) -->
+  <g fill="none" opacity="0.12" stroke="#6366F1">
+    <path d="M 160 242 A 96 96 0 0 0 352 242" stroke-width="0.6" />
+    <path d="M 176 242 A 80 80 0 0 0 336 242" stroke-width="0.7" />
+    <path d="M 192 242 A 64 64 0 0 0 320 242" stroke-width="0.8" />
+    <path d="M 208 242 A 48 48 0 0 0 304 242" stroke-width="0.9" />
+    <path d="M 224 242 A 32 32 0 0 0 288 242" stroke-width="1.0" />
+  </g>
+
+  <!-- The Waveform Axis (The Voice Pattern) -->
+  <!-- Secondary background wave -->
+  <path d="M 150 240 Q 170 200 190 240 T 230 240 T 270 240 T 310 240 T 350 240 T 362 240" 
+        fill="none" stroke="#6366F1" stroke-width="0.8" opacity="0.25" />
+
+  <!-- Main active waveform -->
+  <path d="M 160 240 Q 180 215 200 240 T 240 240 T 280 240 T 320 240 T 352 240" 
+        fill="none" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" />
+
+  <!-- Clinical tick marks under waveform -->
+  <g stroke="#F59E0B" stroke-width="0.5" opacity="0.25">
+    <line x1="180" y1="260" x2="180" y2="264" />
+    <line x1="200" y1="260" x2="200" y2="264" />
+    <line x1="220" y1="260" x2="220" y2="264" />
+    <line x1="240" y1="260" x2="240" y2="264" />
+    <line x1="260" y1="260" x2="260" y2="264" />
+    <line x1="280" y1="260" x2="280" y2="264" />
+    <line x1="300" y1="260" x2="300" y2="264" />
+    <line x1="320" y1="260" x2="320" y2="264" />
+  </g>
+
+  <!-- Central Creator Node -->
+  <circle cx="256" cy="240" r="10" fill="url(#centerNode)" />
+  <circle cx="256" cy="240" r="3.5" fill="#0B0F19" stroke="#F59E0B" stroke-width="1" />
+
+  <!-- Precise Corner Crop Marks -->
+  <g stroke="#F59E0B" stroke-width="0.5" opacity="0.2">
+    <!-- Top-Left -->
+    <path d="M 24 32 L 24 24 L 32 24" fill="none" />
+    <!-- Top-Right -->
+    <path d="M 488 24 L 496 24 L 496 32" fill="none" />
+    <!-- Bottom-Left -->
+    <path d="M 24 480 L 24 488 L 32 488" fill="none" />
+    <!-- Bottom-Right -->
+    <path d="M 488 488 L 496 488 L 496 480" fill="none" />
+  </g>
+
+  <!-- Typography (Resonant Form) -->
+  <text x="261" y="315" class="title-text">PODCRAFT</text>
+  <text x="256" y="338" class="subtitle-text">R E S O N A N T   F O R M</text>
+  
+  <!-- Clinical annotations / markers -->
+  <text x="400" y="86" class="mono-text">REF 001</text>
+  <text x="256" y="480" class="subtitle-text" opacity="0.4">AI-POWERED VOICE SYNTHESIS</text>
+</svg>

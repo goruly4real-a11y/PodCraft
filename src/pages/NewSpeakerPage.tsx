@@ -360,6 +360,7 @@ export default function NewSpeakerPage() {
             </form>
           </CardContent>
         </Card>
+        </div>
       </main>
     </div>
   );

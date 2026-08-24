@@ -747,6 +747,7 @@ export default function NewPodcastPage() {
             </Card>
           )}
         </form>
+        </div>
       </main>
 
       {/* Generation Animation Overlay */}

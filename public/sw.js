@@ -41,7 +41,7 @@
  * 
  * Example: 'podcraft-v2' will be a different cache than 'podcraft-v1'
  */
-const CACHE_NAME = 'podcraft-v1';
+const CACHE_NAME = 'podcraft-v2';
 
 /**
  * FILES TO CACHE
@@ -66,8 +66,11 @@ const CACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon.png',
+  '/icons/logo.svg',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/icons/icon-maskable-512.png',
 ];
 
 /**

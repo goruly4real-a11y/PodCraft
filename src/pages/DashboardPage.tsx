@@ -6,7 +6,7 @@ import { usePodcasts } from '@/hooks/usePodcasts';
 import { useCredits } from '@/hooks/useCredits';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { Plus, Mic, Headphones, Sparkles, ArrowRight, LogOut, Loader2, CreditCard, Home, Settings } from 'lucide-react';
+import { Plus, Mic, Headphones, Sparkles, ArrowRight, LogOut, Loader2, CreditCard, Home } from 'lucide-react';
 import gsap from 'gsap';
 import { Waveform } from '@/components/animations/Waveform';
 

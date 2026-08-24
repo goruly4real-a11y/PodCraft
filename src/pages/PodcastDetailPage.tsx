@@ -285,6 +285,7 @@ export default function PodcastDetailPage() {
             </Card>
           )}
         </div>
+        </div>
       </main>
     </div>
   );

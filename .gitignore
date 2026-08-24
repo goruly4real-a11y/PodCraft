@@ -36,3 +36,6 @@ coverage/
 
 # Misc
 *.tsbuildinfo
+
+# Supabase local CLI temp state
+supabase/.temp/
