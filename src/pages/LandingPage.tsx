@@ -6,6 +6,7 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
 import { SpeakersShowcase } from '@/components/landing/SpeakersShowcase';
 import { CTASection } from '@/components/landing/CTASection';
+import { Scroll3DSection } from '@/components/landing/Scroll3DSection';
 import { GlowOrbs } from '@/components/animations/GlowOrbs';
 import { Waveform } from '@/components/animations/Waveform';
 
@@ -91,6 +92,8 @@ export default function LandingPage() {
         <div id="speakers">
           <SpeakersShowcase />
         </div>
+
+        <Scroll3DSection />
 
         <CTASection />
 

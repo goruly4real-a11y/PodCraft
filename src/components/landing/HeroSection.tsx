@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { ArrowRight, Play } from 'lucide-react';
 import { ParticleCanvas } from '@/components/animations/ParticleCanvas';
 import { Waveform } from '@/components/animations/Waveform';
+import { MicrophoneCanvas } from '@/components/3d/Microphone3D';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -14,9 +15,17 @@ export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
-  const micRef = useRef<HTMLDivElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
   const waveformRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -34,9 +43,9 @@ export function HeroSection() {
         duration: 0.8,
         ease: 'power3.out',
       }, '-=0.5')
-      .from(micRef.current, {
+      .from(canvasRef.current, {
         opacity: 0,
-        scale: 0.8,
+        scale: 0.9,
         duration: 1,
         ease: 'back.out(1.4)',
       }, '-=0.6')
@@ -53,8 +62,9 @@ export function HeroSection() {
         ease: 'power2.out',
       }, '-=0.6');
 
-      gsap.to(micRef.current, {
-        y: 120,
+      gsap.to(canvasRef.current, {
+        y: isMobile ? 80 : 120,
+        rotation: isMobile ? 0 : 15,
         scrollTrigger: {
           trigger: sectionRef.current,
           start: 'top top',
@@ -75,7 +85,7 @@ export function HeroSection() {
     }, sectionRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [isMobile]);
 
   return (
     <section
@@ -83,30 +93,18 @@ export function HeroSection() {
       className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden"
     >
       <div className="absolute inset-0">
-        <ParticleCanvas particleCount={200} speed={0.2} />
+        <ParticleCanvas particleCount={isMobile ? 80 : 200} speed={0.2} />
       </div>
 
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
 
-      <div className="relative z-10 text-center max-w-4xl mx-auto">
+      <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center">
         <div
-          ref={micRef}
-          className="relative w-32 h-32 mx-auto mb-10"
+          ref={canvasRef}
+          className="relative w-full max-w-md md:max-w-lg mx-auto mb-10"
+          style={{ height: isMobile ? '350px' : '450px' }}
         >
-          <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/20 to-secondary/10 flex items-center justify-center border border-primary/20">
-            <svg
-              viewBox="0 0 24 24"
-              className="w-16 h-16 text-primary"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" x2="12" y1="19" y2="22" />
-            </svg>
-          </div>
-          <div className="absolute inset-0 rounded-full bg-primary/5 animate-ping" />
+          <MicrophoneCanvas />
         </div>
 
         <h1
