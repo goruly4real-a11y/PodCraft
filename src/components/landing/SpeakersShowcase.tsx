@@ -70,7 +70,7 @@ export function SpeakersShowcase() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="py-24 px-4 relative overflow-hidden">
+    <section ref={sectionRef} className="py-16 px-4 relative overflow-hidden">
       <div className="max-w-4xl mx-auto">
         <h2
           ref={titleRef}

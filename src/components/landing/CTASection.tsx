@@ -31,7 +31,7 @@ export function CTASection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="py-24 px-4">
+    <section ref={sectionRef} className="py-16 px-4">
       <div className="max-w-4xl mx-auto">
         <div
           ref={contentRef}

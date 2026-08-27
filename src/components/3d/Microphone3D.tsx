@@ -1,18 +1,28 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import {
-  useGLTF,
   Html,
   OrbitControls,
   useScroll,
   Environment,
+  ScrollControls,
 } from '@react-three/drei';
 import * as THREE from 'three';
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect as useEffectReact } from 'react';
 
-const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|Android/i.test(navigator.userAgent);
+
+function checkWebGLSupport(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+  } catch {
+    return false;
+  }
+}
 
 function Microphone() {
   const groupRef = useRef<THREE.Group>(null);
@@ -22,7 +32,7 @@ function Microphone() {
 
   useFrame((state, delta) => {
     const t = state.clock.getElapsedTime();
-    const progress = scroll.offset;
+    const progress = scroll?.offset ?? 0;
 
     if (groupRef.current) {
       groupRef.current.rotation.y = progress * Math.PI * 2;
@@ -114,7 +124,6 @@ function createGrille() {
     color: 0x1a1a2e,
     metalness: 0.8,
     roughness: 0.3,
-    wireframe: false,
   });
   const cap = new THREE.Mesh(capGeometry, grilleMaterial);
   cap.castShadow = true;
@@ -227,26 +236,31 @@ function createCable() {
 function AudioVisualizer() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const barsRef = useRef<THREE.Mesh[]>([]);
-  const scroll = useScroll();
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.AudioContext) {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 64;
-      analyserRef.current = analyser;
+  useEffectReact(() => {
+    if (typeof window === 'undefined' || !window.AudioContext) return;
 
-      const audio = new Audio();
-      audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
-      audio.loop = true;
-      audio.muted = true;
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+    analyserRef.current = analyser;
+    audioCtxRef.current = audioCtx;
 
-      const source = audioCtx.createMediaElementSource(audio);
-      source.connect(analyser);
-      analyser.connect(audioCtx.destination);
+    const audio = new Audio();
+    audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
+    audio.loop = true;
+    audio.muted = true;
 
-      audio.play().catch(() => {});
-    }
+    const source = audioCtx.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    audio.play().catch(() => {});
+
+    return () => {
+      audioCtx.close();
+    };
   }, []);
 
   useFrame(() => {
@@ -286,7 +300,7 @@ function ScrollControlledCamera() {
   useFrame(() => {
     if (!ref.current) return;
 
-    const progress = scroll.offset;
+    const progress = scroll?.offset ?? 0;
     const radius = 3.5;
     const height = 1.5 + progress * 0.5;
     const angle = progress * Math.PI * 2;
@@ -302,20 +316,76 @@ function ScrollControlledCamera() {
   return <camera ref={ref} position={[3.5, 1.5, 3.5]} fov={45} />;
 }
 
-export function MicrophoneCanvas() {
+function MicrophoneScene({ scrollControlled = false }: { scrollControlled?: boolean }) {
   return (
-    <div style={{ width: '100%', height: '100%', minHeight: '500px' }}>
-      <Canvas
-        camera={{ position: [3.5, 1.5, 3.5], fov: 45 }}
-        dpr={isMobile ? 1 : Math.min(window.devicePixelRatio, 2)}
-        performance={{ min: isMobile ? 0.4 : 0.6 }}
-        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false }}
-        shadows
+    <>
+      <Microphone />
+      <AudioVisualizer />
+      {scrollControlled && <ScrollControlledCamera />}
+    </>
+  );
+}
+
+function CanvasWrapper({ 
+  children, 
+  scrollControlled = false, 
+  className = '',
+  style = {}
+}: { 
+  children: React.ReactNode; 
+  scrollControlled?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const [webGLSupported, setWebGLSupported] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setWebGLSupported(checkWebGLSupport());
+  }, []);
+
+  if (!webGLSupported || hasError) {
+    return (
+      <div 
+        className={className}
+        style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background)', color: 'var(--muted-foreground)' }}
+        role="img"
+        aria-label="3D microphone preview - requires WebGL"
       >
-        <Suspense fallback={<Html center>Loading 3D...</Html>}>
-          <Microphone />
-          <AudioVisualizer />
-        </Suspense>
+        <div className="text-center p-8">
+          <svg className="w-24 h-24 mx-auto text-primary/50 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" x2="12" y1="19" y2="22" />
+          </svg>
+          <p className="text-lg font-medium">3D Preview Unavailable</p>
+          <p className="text-sm text-muted-foreground mt-1">Your browser doesn't support WebGL</p>
+        </div>
+      </div>
+    );
+  }
+
+  const canvasContent = (
+    <Canvas
+      camera={{ position: [3.5, 1.5, 3.5], fov: 45 }}
+      dpr={isMobile ? 1 : Math.min(window.devicePixelRatio, 2)}
+      performance={{ min: isMobile ? 0.4 : 0.6 }}
+      gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false }}
+      shadows
+      onCreated={({ gl }) => {
+        gl.setClearColor(0x0B0F19, 0);
+      }}
+    >
+      <Suspense fallback={<Html center>Loading 3D...</Html>}>
+        <MicrophoneScene scrollControlled={scrollControlled} />
+      </Suspense>
+      {scrollControlled ? (
+        <>
+          <ScrollControls pages={3} distance={1} infinite horizontal={false}>
+            <ScrollControlledCamera />
+          </ScrollControls>
+        </>
+      ) : (
         <OrbitControls
           enableZoom={!isMobile}
           enablePan={false}
@@ -324,27 +394,26 @@ export function MicrophoneCanvas() {
           autoRotate={isMobile}
           autoRotateSpeed={0.5}
         />
-      </Canvas>
+      )}
+    </Canvas>
+  );
+
+  return (
+    <div 
+      className={className}
+      style={{ width: '100%', height: '100%', minHeight: '500px', ...style }}
+      onMouseEnter={() => {}}
+      onMouseLeave={() => {}}
+    >
+      {canvasContent}
     </div>
   );
 }
 
-export function ScrollMicrophoneCanvas() {
-  return (
-    <div style={{ width: '100%', height: '100%', minHeight: '500px' }}>
-      <Canvas
-        camera={{ position: [3.5, 1.5, 3.5], fov: 45 }}
-        dpr={isMobile ? 1 : Math.min(window.devicePixelRatio, 2)}
-        performance={{ min: isMobile ? 0.4 : 0.6 }}
-        gl={{ antialias: true, alpha: true }}
-        shadows
-      >
-        <Suspense fallback={<Html center>Loading 3D...</Html>}>
-          <Microphone />
-          <AudioVisualizer />
-          <ScrollControlledCamera />
-        </Suspense>
-      </Canvas>
-    </div>
-  );
+export function MicrophoneCanvas({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return <CanvasWrapper className={className} style={style} scrollControlled={false} />;
+}
+
+export function ScrollMicrophoneCanvas({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return <CanvasWrapper className={className} style={style} scrollControlled={true} />;
 }
