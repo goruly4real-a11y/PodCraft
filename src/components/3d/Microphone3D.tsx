@@ -10,7 +10,7 @@ import {
   ScrollControls,
 } from '@react-three/drei';
 import * as THREE from 'three';
-import { Suspense, useEffect as useEffectReact } from 'react';
+import { Suspense } from 'react';
 
 const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|Android/i.test(navigator.userAgent);
 
@@ -30,7 +30,7 @@ function Microphone() {
   const grilleRef = useRef<THREE.Mesh>(null);
   const scroll = useScroll();
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     const t = state.clock.getElapsedTime();
     const progress = scroll?.offset ?? 0;
 
@@ -50,7 +50,7 @@ function Microphone() {
 
   return (
     <group ref={groupRef} position={[0, -0.5, 0]} scale={0.8}>
-      <Environment preset="studio" intensity={1.2} background />
+      <Environment preset="studio" />
 
       <primitive
         ref={bodyRef}
@@ -235,10 +235,10 @@ function createCable() {
 
 function AudioVisualizer() {
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const barsRef = useRef<THREE.Mesh[]>([]);
+  const barsRef = useRef<THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>[]>([]);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  useEffectReact(() => {
+  useEffect(() => {
     if (typeof window === 'undefined' || !window.AudioContext) return;
 
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -270,10 +270,13 @@ function AudioVisualizer() {
     analyserRef.current.getByteFrequencyData(dataArray);
 
     barsRef.current.forEach((bar, i) => {
+      if (!bar || !bar.material) return;
       const value = dataArray[i] / 255;
       const targetScale = 0.1 + value * 2;
       bar.scale.y = THREE.MathUtils.lerp(bar.scale.y, targetScale, 0.15);
-      bar.material.color.setHSL(0.1 + value * 0.6, 0.8, 0.5);
+      const mat = bar.material as THREE.MeshStandardMaterial;
+      mat.color.setHSL(0.1 + value * 0.6, 0.8, 0.5);
+      mat.emissive.setHSL(0.1 + value * 0.6, 0.8, 0.3);
     });
   });
 
@@ -332,19 +335,18 @@ function CanvasWrapper({
   className = '',
   style = {}
 }: { 
-  children: React.ReactNode; 
+  children?: React.ReactNode; 
   scrollControlled?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }) {
   const [webGLSupported, setWebGLSupported] = useState(true);
-  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     setWebGLSupported(checkWebGLSupport());
   }, []);
 
-  if (!webGLSupported || hasError) {
+  if (!webGLSupported) {
     return (
       <div 
         className={className}
@@ -365,47 +367,41 @@ function CanvasWrapper({
     );
   }
 
-  const canvasContent = (
-    <Canvas
-      camera={{ position: [3.5, 1.5, 3.5], fov: 45 }}
-      dpr={isMobile ? 1 : Math.min(window.devicePixelRatio, 2)}
-      performance={{ min: isMobile ? 0.4 : 0.6 }}
-      gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false }}
-      shadows
-      onCreated={({ gl }) => {
-        gl.setClearColor(0x0B0F19, 0);
-      }}
-    >
-      <Suspense fallback={<Html center>Loading 3D...</Html>}>
-        <MicrophoneScene scrollControlled={scrollControlled} />
-      </Suspense>
-      {scrollControlled ? (
-        <>
-          <ScrollControls pages={3} distance={1} infinite horizontal={false}>
-            <ScrollControlledCamera />
-          </ScrollControls>
-        </>
-      ) : (
-        <OrbitControls
-          enableZoom={!isMobile}
-          enablePan={false}
-          minDistance={2}
-          maxDistance={6}
-          autoRotate={isMobile}
-          autoRotateSpeed={0.5}
-        />
-      )}
-    </Canvas>
-  );
-
   return (
     <div 
       className={className}
       style={{ width: '100%', height: '100%', minHeight: '500px', ...style }}
-      onMouseEnter={() => {}}
-      onMouseLeave={() => {}}
     >
-      {canvasContent}
+      <Canvas
+        camera={{ position: [3.5, 1.5, 3.5], fov: 45 }}
+        dpr={isMobile ? 1 : Math.min(window.devicePixelRatio, 2)}
+        performance={{ min: isMobile ? 0.4 : 0.6 }}
+        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false }}
+        shadows
+        onCreated={({ gl }) => {
+          gl.setClearColor(0x0B0F19, 0);
+        }}
+      >
+        <Suspense fallback={<Html center>Loading 3D...</Html>}>
+          <MicrophoneScene scrollControlled={scrollControlled} />
+        </Suspense>
+        {scrollControlled ? (
+          <>
+            <ScrollControls pages={3} distance={1} infinite horizontal={false}>
+              <ScrollControlledCamera />
+            </ScrollControls>
+          </>
+        ) : (
+          <OrbitControls
+            enableZoom={!isMobile}
+            enablePan={false}
+            minDistance={2}
+            maxDistance={6}
+            autoRotate={isMobile}
+            autoRotateSpeed={0.5}
+          />
+        )}
+      </Canvas>
     </div>
   );
 }
