@@ -235,7 +235,7 @@ function createCable() {
 
 function AudioVisualizer() {
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const barsRef = useRef<THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>[]>([]);
+  const barsRef = useRef<THREE.Mesh[]>([]);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
@@ -316,7 +316,7 @@ function ScrollControlledCamera() {
     ref.current.lookAt(0, 1, 0);
   });
 
-  return <camera ref={ref} position={[3.5, 1.5, 3.5]} fov={45} />;
+  return <perspectiveCamera ref={ref} position={[3.5, 1.5, 3.5]} fov={45} />;
 }
 
 function MicrophoneScene({ scrollControlled = false }: { scrollControlled?: boolean }) {
@@ -330,12 +330,10 @@ function MicrophoneScene({ scrollControlled = false }: { scrollControlled?: bool
 }
 
 function CanvasWrapper({ 
-  children, 
   scrollControlled = false, 
   className = '',
   style = {}
 }: { 
-  children?: React.ReactNode; 
   scrollControlled?: boolean;
   className?: string;
   style?: React.CSSProperties;
