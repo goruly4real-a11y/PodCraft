@@ -1,12 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Mic, Github, Twitter } from 'lucide-react';
-import { HeroSection } from '@/components/landing/HeroSection';
-import { FeaturesSection } from '@/components/landing/FeaturesSection';
-import { SpeakersShowcase } from '@/components/landing/SpeakersShowcase';
-import { CTASection } from '@/components/landing/CTASection';
-import { Scroll3DSection } from '@/components/landing/Scroll3DSection';
+import { Experience3D } from '@/components/3d';
 import { GlowOrbs } from '@/components/animations/GlowOrbs';
 import { Waveform } from '@/components/animations/Waveform';
 
@@ -15,6 +11,7 @@ gsap.registerPlugin(ScrollTrigger);
 export default function LandingPage() {
   const navRef = useRef<HTMLElement>(null);
   const footerRef = useRef<HTMLElement>(null);
+  const [currentSection, setCurrentSection] = useState('hero');
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -81,25 +78,14 @@ export default function LandingPage() {
       </nav>
 
       <main>
-        <GlowOrbs count={3} />
-
-        <HeroSection />
-
-        <div id="features">
-          <FeaturesSection />
-        </div>
-
-        <div id="speakers">
-          <SpeakersShowcase />
-        </div>
-
-        <Scroll3DSection />
-
-        <CTASection />
+        <Experience3D
+          onSectionChange={(section) => console.log('Section:', section)}
+          style={{ minHeight: '100vh' }}
+        />
 
         <footer
           ref={footerRef}
-          className="py-12 px-4 border-t border-border/50"
+          className="py-12 px-4 border-t border-border/50 relative z-10"
         >
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
