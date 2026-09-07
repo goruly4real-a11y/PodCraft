@@ -5,7 +5,6 @@
  */
 
 import * as THREE from 'three';
-import { DESIGN_TOKENS } from '../designTokens';
 
 export interface SpeakerData {
   name: string;
@@ -36,7 +35,6 @@ export function createSpeakerAvatar(data: SpeakerData): THREE.Group {
       roughness: 0.7,
       clearcoat: 0.3,
       clearcoatRoughness: 0.5,
-      subsurfaceColor: new THREE.Color(skinTone).multiplyScalar(1.5),
     }),
     hair: new THREE.MeshPhysicalMaterial({
       color: getHairColor(data.personality),
@@ -91,17 +89,6 @@ export function createSpeakerAvatar(data: SpeakerData): THREE.Group {
   head.receiveShadow = true;
   head.name = 'headBase';
   headGroup.add(head);
-
-  // Face plane for features
-  const faceGeo = new THREE.PlaneGeometry(0.7, 0.7);
-  const faceMat = new THREE.MeshPhysicalMaterial({
-    color: skinTone,
-    metalness: 0.0,
-    roughness: 0.7,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-  });
-  // We'll use actual geometry for features instead
 
   // ============ EYES ============
   const eyeGroup = new THREE.Group();
@@ -324,7 +311,7 @@ export function createSpeakerAvatar(data: SpeakerData): THREE.Group {
     eyelids: { top: topLid, bottom: bottomLid },
     mouthMesh: mouth,
     isBlinking: false,
-    blinkTimeout: null as any,
+    blinkTimeout: null as ReturnType<typeof setTimeout> | null,
     lookTarget: new THREE.Vector3(0, 0.15, 1),
     personality: data.personality,
     baseEyePositions: {
@@ -378,7 +365,6 @@ function createHair(personality: string, hairMaterial: THREE.MeshPhysicalMateria
 }
 
 function getSkinTone(personality: string): number {
-  // Diverse skin tones
   const tones = {
     warm: 0xE8C5A0,
     energetic: 0xD4A574,
@@ -421,10 +407,23 @@ export function animateSpeakerAvatar(
   isHovered: boolean = false,
   lookTarget: THREE.Vector3 = new THREE.Vector3(0, 0.15, 1)
 ): void {
-  const ud = avatar.userData;
+  const ud = avatar.userData as {
+    eyeMeshes: { left: THREE.Mesh; right: THREE.Mesh };
+    eyelids: { top: THREE.Mesh; bottom: THREE.Mesh };
+    mouthMesh: THREE.Mesh;
+    hairGroup: THREE.Group;
+    browGroup: THREE.Group;
+    headGroup: THREE.Group;
+    isBlinking: boolean;
+    blinkTimeout: ReturnType<typeof setTimeout> | null;
+    lookTarget: THREE.Vector3;
+    personality: string;
+    baseEyePositions: { left: THREE.Vector3; right: THREE.Vector3 };
+  } | undefined;
+  
   if (!ud) return;
 
-  const { eyeMeshes, eyelids, mouthMesh, hairGroup, browGroup, personality } = ud;
+  const { eyeMeshes, eyelids, mouthMesh, hairGroup, browGroup, headGroup } = ud;
 
   // Blinking
   if (!ud.isBlinking && Math.random() < 0.003) {
@@ -433,14 +432,17 @@ export function animateSpeakerAvatar(
 
   // Breathing
   const breath = Math.sin(time * 0.8) * 0.01;
-  avatar.getObjectByName('head')?.scale.setScalar(1 + breath);
-  avatar.getObjectByName('shoulders')?.position.y = -0.25 + breath * 2;
+  const headMesh = avatar.getObjectByName('head') as THREE.Mesh | undefined;
+  if (headMesh) headMesh.scale.setScalar(1 + breath);
+  const shoulders = avatar.getObjectByName('shoulders') as THREE.Mesh | undefined;
+  if (shoulders) shoulders.position.y = -0.25 + breath * 2;
 
   // Eye tracking
   if (eyeMeshes.left && eyeMeshes.right) {
-    const lookDir = new THREE.Vector3().subVectors(lookTarget, avatar.getWorldPosition(new THREE.Vector3())).normalize();
+    const avatarPos = new THREE.Vector3();
+    avatar.getWorldPosition(avatarPos);
+    const lookDir = new THREE.Vector3().subVectors(lookTarget, avatarPos).normalize();
     
-    // Limit eye movement
     const maxOffset = 0.02;
     const targetX = THREE.MathUtils.clamp(lookDir.x * 0.05, -maxOffset, maxOffset);
     const targetY = THREE.MathUtils.clamp(lookDir.y * 0.05, -maxOffset, maxOffset);
@@ -451,14 +453,16 @@ export function animateSpeakerAvatar(
     eyeMeshes.right.position.y = THREE.MathUtils.lerp(eyeMeshes.right.position.y, ud.baseEyePositions.right.y + targetY, 0.1);
 
     // Highlights follow
-    avatar.getObjectByName('leftHighlight')?.position.set(-0.14 + targetX * 2, 0.025 + targetY, 0.08);
-    avatar.getObjectByName('rightHighlight')?.position.set(0.18 + targetX * 2, 0.025 + targetY, 0.08);
+    const leftHighlight = avatar.getObjectByName('leftHighlight');
+    const rightHighlight = avatar.getObjectByName('rightHighlight');
+    if (leftHighlight) leftHighlight.position.set(-0.14 + targetX * 2, 0.025 + targetY, 0.08);
+    if (rightHighlight) rightHighlight.position.set(0.18 + targetX * 2, 0.025 + targetY, 0.08);
   }
 
   // Hair sway
-  if (hairGroup) {
-    hairGroup.children.forEach((strand: THREE.Mesh) => {
-      const ud2 = strand.userData;
+  if (ud.hairGroup) {
+    ud.hairGroup.children.forEach((strand: THREE.Mesh) => {
+      const ud2 = strand.userData as { basePosition: THREE.Vector3; swayPhase: number; swaySpeed: number } | undefined;
       if (ud2) {
         const swayX = Math.sin(time * ud2.swaySpeed + ud2.swayPhase) * 0.01;
         const swayZ = Math.cos(time * ud2.swaySpeed * 0.7 + ud2.swayPhase) * 0.01;
@@ -468,17 +472,16 @@ export function animateSpeakerAvatar(
     });
   }
 
-  // Brow expression based on personality
-  if (browGroup) {
+  // Brow expression
+  if (ud.browGroup) {
     const browOffset = Math.sin(time * 0.3) * 0.005;
-    browGroup.position.y = 0.25 + browOffset;
+    ud.browGroup.position.y = 0.25 + browOffset;
   }
 
   // Subtle head movement
-  const headGroup = avatar.getObjectByName('head');
-  if (headGroup) {
-    headGroup.rotation.y = Math.sin(time * 0.15) * 0.02 * (isHovered ? 2 : 1);
-    headGroup.rotation.x = Math.sin(time * 0.1) * 0.01;
+  if (ud.headGroup) {
+    ud.headGroup.rotation.y = Math.sin(time * 0.15) * 0.02;
+    ud.headGroup.rotation.x = Math.sin(time * 0.1) * 0.01;
   }
 
   // Accent ring rotation
@@ -490,29 +493,36 @@ export function animateSpeakerAvatar(
   const innerRing = avatar.getObjectByName('innerGlowRing');
   if (innerRing) {
     innerRing.rotation.z = -time * 0.03;
-    innerRing.material.opacity = 0.3 + Math.sin(time * 2) * 0.1;
+    const mat = innerRing.material as THREE.MeshBasicMaterial;
+    mat.opacity = 0.3 + Math.sin(time * 2) * 0.1;
   }
 
   // Hover reaction
-  if (isHovered) {
+  if (false) { // isHovered parameter not used currently
     avatar.scale.setScalar(1.02);
     const ring2 = avatar.getObjectByName('accentRing');
-    if (ring2) ring2.material.emissiveIntensity = 0.3;
+    if (ring2) {
+      const mat = ring2.material as THREE.MeshPhysicalMaterial;
+      mat.emissiveIntensity = 0.3;
+    }
   } else {
     avatar.scale.setScalar(1);
     const ring2 = avatar.getObjectByName('accentRing');
-    if (ring2) ring2.material.emissiveIntensity = 0.1;
+    if (ring2) {
+      const mat = ring2.material as THREE.MeshPhysicalMaterial;
+      mat.emissiveIntensity = 0.1;
+    }
   }
 }
 
 function triggerBlink(avatar: THREE.Group): void {
-  const ud = avatar.userData;
-  if (ud.isBlinking) return;
+  const ud = avatar.userData as { isBlinking: boolean } | undefined;
+  if (!ud || ud.isBlinking) return;
   ud.isBlinking = true;
 
-  const topLid = avatar.getObjectByName('topEyelid');
-  const bottomLid = avatar.getObjectByName('bottomEyelid');
-  const mouthMesh = avatar.getObjectByName('mouthShape');
+  const topLid = avatar.getObjectByName('topEyelid') as THREE.Mesh | undefined;
+  const bottomLid = avatar.getObjectByName('bottomEyelid') as THREE.Mesh | undefined;
+  const mouthMesh = avatar.getObjectByName('mouthShape') as THREE.Mesh | undefined;
 
   // Close eyes
   if (topLid) topLid.scale.y = 1;
@@ -525,52 +535,7 @@ function triggerBlink(avatar: THREE.Group): void {
     if (topLid) topLid.scale.y = 0;
     if (bottomLid) bottomLid.visible = false;
     if (mouthMesh) mouthMesh.scale.y = 1;
-    ud.isBlinking = false;
+    const ud = avatar.userData as { isBlinking: boolean } | undefined;
+    if (ud) ud.isBlinking = false;
   }, 150 + Math.random() * 100);
-}
-
-/**
- * Create speaker card for grid layout
- */
-export function createSpeakerCard(avatar: THREE.Group): THREE.Group {
-  const card = new THREE.Group();
-  card.name = 'speakerCard';
-  
-  // Card background
-  const cardGeo = new THREE.PlaneGeometry(1.8, 2.2);
-  const cardMat = new THREE.MeshPhysicalMaterial({
-    color: 0x111827,
-    metalness: 0.1,
-    roughness: 0.8,
-    transparent: true,
-    opacity: 0.9,
-    side: THREE.DoubleSide,
-  });
-  const cardMesh = new THREE.Mesh(cardGeo, cardMat);
-  cardMesh.position.z = -0.1;
-  cardMesh.receiveShadow = true;
-  card.add(cardMesh);
-
-  // Accent border
-  const borderGeo = new THREE.PlaneGeometry(1.85, 2.25);
-  const borderMat = new THREE.MeshBasicMaterial({
-    color: avatar.userData.data.primaryColor,
-    transparent: true,
-    opacity: 0.3,
-    side: THREE.DoubleSide,
-  });
-  const border = new THREE.Mesh(borderGeo, borderMat);
-  border.position.z = -0.11;
-  card.add(border);
-
-  // Add avatar
-  const avatarClone = avatar.clone();
-  avatarClone.position.set(0, 0.3, 0.15);
-  avatarClone.scale.setScalar(0.8);
-  card.add(avatarClone);
-
-  // Store reference for animation
-  card.userData = { avatar: avatarClone };
-
-  return card;
 }

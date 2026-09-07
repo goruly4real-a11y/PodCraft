@@ -14,8 +14,8 @@ gsap.registerPlugin(ScrollTrigger);
 
 export function CTASection3D() {
   const { scene } = useThree();
-  const episodeRef = useRef<THREE.Group>(null);
-  const particlesRef = useRef<THREE.Points>(null);
+  const episodeRef = useRef<THREE.Group | null>(null);
+  const particlesRef = useRef<THREE.Points | null>(null);
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -78,12 +78,12 @@ export function CTASection3D() {
     scene.add(episode);
 
     // Burst particles on CTA
-    const burstGeo = new THREE.BufferGeometry();
     const burstCount = 200;
-    const positions = new Float32Array(burstCount * 3);
-    const velocities = new Float32Array(burstCount * 3);
+    const burstGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(200 * 3);
+    const velocities = new Float32Array(200 * 3);
     
-    for (let i = 0; i < burstCount; i++) {
+    for (let i = 0; i < 200; i++) {
       positions[i * 3] = 0;
       positions[i * 3 + 1] = 1.2;
       positions[i * 3 + 2] = -2;
@@ -114,7 +114,6 @@ export function CTASection3D() {
     burstParticles.name = 'burstParticles';
     burstParticles.userData = { active: false, time: 0, velocities };
     scene.add(burstParticles);
-    particlesRef.current = burstParticles;
 
     // Entrance animation
     const ctx = gsap.context(() => {
@@ -182,14 +181,15 @@ export function CTASection3D() {
 
   // Burst effect on CTA hover
   const triggerBurst = () => {
-    const burst = scene.getObjectByName('burstParticles') as THREE.Points;
+    const burst = scene.getObjectByName('burstParticles') as THREE.Points | undefined;
     if (!burst || burst.userData.active) return;
     
     burst.userData.active = true;
     burst.userData.time = 0;
-    burst.material.opacity = 1;
+    const mat = burst.material as THREE.PointsMaterial;
+    mat.opacity = 1;
     
-    gsap.to(burst.material, {
+    gsap.to(mat, {
       opacity: 0,
       duration: 1.5,
       ease: 'power2.out',
@@ -197,7 +197,6 @@ export function CTASection3D() {
         burst.userData.active = false;
         // Reset positions
         const positions = burst.geometry.attributes.position.array;
-        const velocities = burst.userData.velocities;
         for (let i = 0; i < positions.length; i += 3) {
           positions[i] = 0;
           positions[i + 1] = 1.2;
@@ -221,11 +220,11 @@ export function CTASection3D() {
     }
 
     // Burst particles
-    const burst = scene.getObjectByName('burstParticles') as THREE.Points;
+    const burst = scene.getObjectByName('burstParticles') as THREE.Points | undefined;
     if (burst && burst.userData.active) {
       burst.userData.time += state.clock.getDelta();
       const positions = burst.geometry.attributes.position.array;
-      const velocities = burst.userData.velocities;
+      const velocities = burst.userData.velocities as Float32Array;
       
       for (let i = 0; i < positions.length; i += 3) {
         positions[i] += velocities[i] * 0.5;

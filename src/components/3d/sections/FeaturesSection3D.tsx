@@ -66,7 +66,7 @@ export function FeaturesSection3D() {
     initializedRef.current = true;
 
     // Create feature visualization objects
-    FEATURES.forEach((feature, i) => {
+    FEATURES.forEach((feature) => {
       const group = new THREE.Group();
       group.name = `feature_${feature.id}`;
       group.position.set(...feature.position);
@@ -145,7 +145,7 @@ export function FeaturesSection3D() {
           y: 1.1,
           z: 1.1,
           scrollTrigger: {
-            trigger: `[data-scroll-section="features"]`,
+            trigger: '[data-scroll-section="features"]',
             start: 'top center',
             end: 'center center',
             scrub: 1,
@@ -162,7 +162,10 @@ export function FeaturesSection3D() {
 
     featureMeshesRef.current.forEach((mesh, i) => {
       // Floating animation
-      mesh.position.y = mesh.userData.basePosition[1] + Math.sin(t * 0.8 + i) * 0.1;
+      const basePos = mesh.userData?.basePosition as number[] | undefined;
+      if (basePos) {
+        mesh.position.y = basePos[1] + Math.sin(t * 0.8 + i) * 0.1;
+      }
       
       // Inner rotation
       const inner = mesh.getObjectByName('inner');
@@ -215,19 +218,19 @@ export function FeaturesSection3D() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16" style={{ pointerEvents: 'auto' }}>
-            {FEATURES.map((feature, i) => (
+            {FEATURES.map((feature) => (
               <div
                 key={feature.id}
                 className="group p-8 rounded-2xl bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm hover:border-amber-500/50 transition-all duration-500"
                 style={{
-                  background: `linear-gradient(135deg, ${feature.color}10, transparent)`,
-                  borderColor: `${feature.color}30`,
+                  background: `linear-gradient(135deg, ${feature.color.toString(16).padStart(6, '0')}10, transparent)`,
+                  borderColor: `${feature.color.toString(16).padStart(6, '0')}30`,
                 }}
               >
                 <div className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center text-3xl"
                   style={{
-                    background: `linear-gradient(135deg, ${feature.color}20, ${feature.color}05)`,
-                    border: `1px solid ${feature.color}30`,
+                    background: `linear-gradient(135deg, ${feature.color.toString(16).padStart(6, '0')}20, ${feature.color.toString(16).padStart(6, '0')}05)`,
+                    border: `1px solid ${feature.color.toString(16).padStart(6, '0')}30`,
                   }}
                 >
                   {feature.icon}

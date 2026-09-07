@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Mic, Github, Twitter } from 'lucide-react';
 import { Experience3D } from '@/components/3d';
-import { GlowOrbs } from '@/components/animations/GlowOrbs';
 import { Waveform } from '@/components/animations/Waveform';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -11,7 +10,6 @@ gsap.registerPlugin(ScrollTrigger);
 export default function LandingPage() {
   const navRef = useRef<HTMLElement>(null);
   const footerRef = useRef<HTMLElement>(null);
-  const [currentSection, setCurrentSection] = useState('hero');
 
   useEffect(() => {
     const ctx = gsap.context(() => {

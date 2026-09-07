@@ -90,12 +90,12 @@ export function SpeakersSection3D() {
 
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(
-        SPEAKER_PRESETS.map((_, i) => scene.getObjectByName(`Speaker_${SPEAKER_PRESETS[i].name}`)!).filter(Boolean),
+        avatarsRef.current,
         true
       );
 
       if (intersects.length > 0) {
-        const avatar = intersects[0].object;
+        let avatar = intersects[0].object;
         while (avatar.parent && !avatar.name.startsWith('Speaker_')) {
           avatar = avatar.parent;
         }
@@ -116,7 +116,7 @@ export function SpeakersSection3D() {
     const t = state.clock.getElapsedTime();
     
     SPEAKER_PRESETS.forEach((_, i) => {
-      const avatar = scene.getObjectByName(`Speaker_${SPEAKER_PRESETS[i].name}`);
+      const avatar = avatarsRef.current[i];
       if (avatar) {
         animateSpeakerAvatar(avatar, t, 0, hoveredIndex === i);
       }
@@ -166,8 +166,8 @@ export function SpeakersSection3D() {
                 onMouseEnter={() => setHoveredIndex(i)}
                 onMouseLeave={() => setHoveredIndex(null)}
                 style={{
-                  background: `linear-gradient(135deg, ${preset.primaryColor.toString(16).padStart(6, '0')}10, transparent)`,
-                  borderColor: `${preset.primaryColor.toString(16).padStart(6, '0')}30`,
+                  background: `linear-gradient(135deg, #${preset.primaryColor.toString(16).padStart(6, '0')}10, transparent)`,
+                  borderColor: `#${preset.primaryColor.toString(16).padStart(6, '0')}30`,
                 }}
               >
                 {/* 3D Avatar preview area */}
@@ -191,8 +191,8 @@ export function SpeakersSection3D() {
                 </div>
                 <span className="px-3 py-1 rounded-full text-sm font-medium text-slate-300"
                   style={{
-                    background: `linear-gradient(135deg, ${preset.primaryColor.toString(16).padStart(6, '0')}20, ${preset.secondaryColor.toString(16).padStart(6, '0')}20)`,
-                    border: `1px solid ${preset.primaryColor.toString(16).padStart(6, '0')}30`,
+                    background: `linear-gradient(135deg, #${preset.primaryColor.toString(16).padStart(6, '0')}20, #${preset.secondaryColor.toString(16).padStart(6, '0')}20)`,
+                    border: `1px solid #${preset.primaryColor.toString(16).padStart(6, '0')}30`,
                   }}
                 >
                   {preset.role}

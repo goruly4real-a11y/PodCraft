@@ -1,42 +1,39 @@
 /**
  * PodCraft 3D Experience - Main Orchestrator
  * Narrative-driven scroll experience inspired by Unseen Studio
- * Single canvas, section-based, lazy-loaded, performant
  */
 
 'use client';
 
 import { useRef, useState, useEffect, useMemo } from 'react';
-import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
   Html,
-  OrbitControls,
   ScrollControls,
   useScroll,
   Environment,
-  PerspectiveCamera,
   Effects,
+  ContactShadows,
+} from '@react-three/drei';
+import {
   Bloom,
   Vignette,
   ChromaticAberration,
   Noise,
   DepthOfField,
-  ContactShadows,
-} from '@react-three/drei';
+} from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Suspense, lazy } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-import { DESIGN_TOKENS, type DesignTokens } from './designTokens';
+import { DESIGN_TOKENS } from './designTokens';
 import { createSM7BMicrophone, createSM7BSimplified } from './objects/MicrophoneSM7B';
-import { createSpeakerAvatar, SPEAKER_PRESETS, animateSpeakerAvatar, createSpeakerCard } from './objects/SpeakerAvatars';
+import { createSpeakerAvatar, SPEAKER_PRESETS, animateSpeakerAvatar } from './objects/SpeakerAvatars';
+import { createVisualizerBars } from './objects/AudioVisualizer';
 import { createAtmosphereParticles, createFloatingOrbs, createLightRays, createStudioLighting, createEnvironment, createDustMotes } from './objects/Atmosphere';
-import { AudioVisualizer, createVisualizerBars } from './objects/AudioVisualizer';
 
 gsap.registerPlugin(ScrollTrigger);
-
-// ============ SECTION COMPONENTS ============
 
 // Lazy-loaded section components
 const HeroSection3D = lazy(() => import('./sections/HeroSection3D').then(m => ({ default: m.HeroSection3D })));
@@ -54,7 +51,6 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
   const [webGLSupported, setWebGLSupported] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isLowEnd, setIsLowEnd] = useState(false);
-  const [loadedSections, setLoadedSections] = useState<Set<string>>(new Set());
   const sectionProgressRef = useRef<Record<string, number>>({});
   const currentSectionRef = useRef('hero');
   const scrollProgressRef = useRef(0);
@@ -65,10 +61,9 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
       const mobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
       setIsMobile(mobile);
       
-      // Simple low-end detection
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      const lowEnd = mobile || !gl || navigator.hardwareConcurrency <= 4;
+      const lowEnd = mobile || !gl || (navigator.hardwareConcurrency ?? 8) <= 4;
       setIsLowEnd(lowEnd);
       setWebGLSupported(!!gl);
     };
@@ -154,8 +149,6 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
             onSectionChange={onSectionChange}
             sectionProgressRef={sectionProgressRef}
             currentSectionRef={currentSectionRef}
-            loadedSections={loadedSections}
-            setLoadedSections={setLoadedSections}
             scrollProgressRef={scrollProgressRef}
           />
         </Suspense>
@@ -172,7 +165,7 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
         
         {/* Post-processing - desktop only */}
         {perfSettings.postProcessing && (
-          <Effects multisampling={8}>
+          <Effects>
             <Bloom
               intensity={0.3}
               luminanceThreshold={0.85}
@@ -218,31 +211,30 @@ function ExperienceScene({
   onSectionChange,
   sectionProgressRef,
   currentSectionRef,
-  loadedSections,
-  setLoadedSections,
   scrollProgressRef,
 }: {
-  perfSettings: typeof DESIGN_TOKENS.performance.desktop;
+  perfSettings: { maxParticles: number; dpr: number; postProcessing: boolean };
   onSectionChange?: (section: string, progress: number) => void;
   sectionProgressRef: React.MutableRefObject<Record<string, number>>;
   currentSectionRef: React.MutableRefObject<string>;
-  loadedSections: Set<string>;
-  setLoadedSections: React.Dispatch<React.SetStateAction<Set<string>>>;
   scrollProgressRef: React.MutableRefObject<number>;
 }) {
   const { scene, camera } = useThree();
   const scroll = useScroll();
   const timeRef = useRef(0);
-  const micRef = useRef<THREE.Group>(null);
-  const particlesRef = useRef<THREE.Points>(null);
-  const orbsRef = useRef<THREE.Group>(null);
-  const lightRaysRef = useRef<THREE.Group>(null);
-  const visualizerRef = useRef<THREE.Group>(null);
+  const micRef = useRef<THREE.Group | null>(null);
+  const particlesRef = useRef<THREE.Points | null>(null);
+  const orbsRef = useRef<THREE.Group | null>(null);
+  const lightRaysRef = useRef<THREE.Group | null>(null);
+  const visualizerRef = useRef<THREE.Group | null>(null);
   const speakerAvatarsRef = useRef<THREE.Group[]>([]);
-  const hoverTargetRef = useRef<THREE.Object3D | null>(null);
+  const initializedRef = useRef(false);
 
   // Initialize scene
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     // Environment
     const env = createEnvironment();
     scene.add(env);
@@ -286,7 +278,7 @@ function ExperienceScene({
     const avatars = SPEAKER_PRESETS.map((preset, i) => {
       const avatar = createSpeakerAvatar(preset);
       avatar.position.set(
-        (i - 2) * 1.8,
+        (i - 2) * 2.2,
         0.3,
         2.5
       );
@@ -318,7 +310,6 @@ function ExperienceScene({
     // Cleanup
     return () => {
       scene.remove(env, lights, particles, orbs, rays, dust, visualizer, mic, avatarGroup);
-      // Dispose geometries/materials
       [particles, orbs, rays, dust, visualizer, mic, avatarGroup].forEach(obj => {
         obj.traverse(child => {
           if (child instanceof THREE.Mesh) {
@@ -341,22 +332,23 @@ function ExperienceScene({
     scrollProgressRef.current = progress;
 
     // Update particle uniforms
-    if (particlesRef.current?.material?.uniforms) {
-      particlesRef.current.material.uniforms.uTime.value = timeRef.current;
-      particlesRef.current.material.uniforms.uScrollProgress.value = progress;
+    if (particlesRef.current?.material && 'uniforms' in particlesRef.current.material) {
+      const mat = particlesRef.current.material as THREE.ShaderMaterial;
+      mat.uniforms.uTime.value = timeRef.current;
+      mat.uniforms.uScrollProgress.value = progress;
       particlesRef.current.rotation.y += 0.0001 * perfSettings.maxParticles / 2000;
       particlesRef.current.rotation.x = Math.sin(timeRef.current * 0.1) * 0.02;
     }
 
     // Animate orbs
     if (orbsRef.current) {
-      orbsRef.current.children.forEach((orb: THREE.Mesh, i) => {
-        const ud = orb.userData;
+      orbsRef.current.children.forEach((orb: THREE.Mesh) => {
+        const ud = orb.userData as { basePosition: THREE.Vector3; speed: number; phase: number; rotationSpeed?: number } | undefined;
         if (ud) {
           orb.position.x = ud.basePosition.x + Math.sin(timeRef.current * ud.speed + ud.phase) * 0.5;
           orb.position.y = ud.basePosition.y + Math.cos(timeRef.current * ud.speed * 0.7 + ud.phase) * 0.3;
           orb.position.z = ud.basePosition.z + Math.sin(timeRef.current * ud.speed * 0.5 + ud.phase) * 0.5;
-          orb.rotation.y += ud.rotationSpeed || 0;
+          orb.rotation.y += ud.rotationSpeed ?? 0;
         }
       });
     }
@@ -364,10 +356,11 @@ function ExperienceScene({
     // Animate light rays
     if (lightRaysRef.current) {
       lightRaysRef.current.children.forEach((ray: THREE.Mesh) => {
-        const ud = ray.userData;
+        const ud = ray.userData as { baseRotation: number; speed: number } | undefined;
         if (ud) {
           ray.rotation.z = ud.baseRotation + Math.sin(timeRef.current * ud.speed) * 0.1;
-          ray.material.opacity = 0.02 + Math.sin(timeRef.current * 0.5) * 0.01;
+          const mat = ray.material as THREE.MeshBasicMaterial;
+          mat.opacity = 0.02 + Math.sin(timeRef.current * 0.5) * 0.01;
         }
       });
     }
@@ -406,7 +399,7 @@ function ExperienceScene({
     // Animate speaker avatars
     speakerAvatarsRef.current.forEach((avatar, i) => {
       const scrollSectionProgress = sectionProgressRef.current.speakers || 0;
-      const isHovered = hoverTargetRef.current === avatar;
+      const isHovered = false; // Simplified for now
       animateSpeakerAvatar(avatar, state.clock.getElapsedTime(), scrollSectionProgress, isHovered);
     });
 
@@ -420,7 +413,6 @@ function ExperienceScene({
       if (clamped > 0.5 && currentSectionRef.current !== section) {
         currentSectionRef.current = section;
         onSectionChange?.(section, clamped);
-        setLoadedSections(prev => new Set([...prev, section]));
       }
     });
 
@@ -439,7 +431,7 @@ function ExperienceScene({
 
 function ScrollCamera() {
   const scroll = useScroll();
-  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   useFrame(() => {
     if (!cameraRef.current) return;
@@ -464,9 +456,5 @@ function ScrollCamera() {
 
   return <perspectiveCamera ref={cameraRef} position={[4, 1.5, 4]} fov={45} />;
 }
-
-// ============ HOVER HANDLING ============
-
-// We'll handle hover via raycasting in the sections
 
 export { Experience3D };

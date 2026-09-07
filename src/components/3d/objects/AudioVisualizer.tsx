@@ -6,7 +6,6 @@
 import * as THREE from 'three';
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import gsap from 'gsap';
 
 interface AudioVisualizerProps {
   enabled?: boolean;
@@ -18,7 +17,6 @@ export function AudioVisualizer({ enabled = true, position = [0, -1.5, 1.2], sca
   const analyserRef = useRef<AnalyserNode | null>(null);
   const barsRef = useRef<THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>[]>([]);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined' || !window.AudioContext) return;
@@ -30,7 +28,7 @@ export function AudioVisualizer({ enabled = true, position = [0, -1.5, 1.2], sca
     analyserRef.current = analyser;
     audioCtxRef.current = audioCtx;
 
-    // Create silent oscillator for demo, or connect to microphone
+    // Create silent oscillator for demo
     const oscillator = audioCtx.createOscillator();
     oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(220, audioCtx.currentTime);
@@ -47,19 +45,16 @@ export function AudioVisualizer({ enabled = true, position = [0, -1.5, 1.2], sca
     // Also try to get microphone for real audio
     navigator.mediaDevices?.getUserMedia({ audio: true, video: false })
       .then(stream => {
-        mediaStreamRef.current = stream;
         const micSource = audioCtx.createMediaStreamSource(stream);
         micSource.connect(analyser);
       })
       .catch(() => {
-        // Mic denied, use oscillator demo
         console.log('Using demo oscillator for visualizer');
       });
 
     return () => {
       oscillator.stop();
       audioCtx.close();
-      mediaStreamRef.current?.getTracks().forEach(t => t.stop());
     };
   }, [enabled]);
 
@@ -96,7 +91,7 @@ export function AudioVisualizer({ enabled = true, position = [0, -1.5, 1.2], sca
   });
 
   const barCount = 32;
-  const bars: THREE.Mesh[] = [];
+  const bars: React.ReactElement[] = [];
 
   for (let i = 0; i < barCount; i++) {
     bars.push(
@@ -127,7 +122,7 @@ export function AudioVisualizer({ enabled = true, position = [0, -1.5, 1.2], sca
 }
 
 /**
- * Advanced visualizer with multiple modes
+ * Create visualizer bars as a group (non-JSX version)
  */
 export function createVisualizerBars(count: number = 64): THREE.Group {
   const group = new THREE.Group();
@@ -180,35 +175,6 @@ export function createRadialVisualizer(count: number = 48, radius: number = 1): 
     mesh.userData = { index: i, baseRadius: radius };
     group.add(mesh);
   }
-
-  return group;
-}
-
-/**
- * Waveform visualizer - oscilloscope style
- */
-export function createWaveformVisualizer(width: number = 2, resolution: number = 128): THREE.Group {
-  const group = new THREE.Group();
-  group.name = 'waveformVisualizer';
-
-  const points: THREE.Vector3[] = [];
-  for (let i = 0; i < resolution; i++) {
-    points.push(new THREE.Vector3(
-      (i / (resolution - 1) - 0.5) * width,
-      0,
-      0
-    ));
-  }
-
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
-  const material = new THREE.LineBasicMaterial({
-    color: 0xF59E0B,
-    linewidth: 2,
-  });
-
-  const line = new THREE.Line(geometry, material);
-  line.name = 'waveformLine';
-  group.add(line);
 
   return group;
 }

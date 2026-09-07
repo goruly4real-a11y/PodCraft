@@ -14,11 +14,10 @@ gsap.registerPlugin(ScrollTrigger);
 
 export function HeroSection3D() {
   const { scene, camera } = useThree();
-  const micRef = useRef<THREE.Group>(null);
+  const micRef = useRef<THREE.Group | null>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const subtitleRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
-  const particlesRef = useRef<THREE.Points>(null);
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -29,28 +28,25 @@ export function HeroSection3D() {
     const mic = scene.getObjectByName('SM7B') || scene.getObjectByName('SM7BSimple');
     if (mic) micRef.current = mic;
 
-    // Find particles
-    scene.traverse(obj => {
-      if (obj.name === 'atmosphereParticles') particlesRef.current = obj as THREE.Points;
-    });
-
     // GSAP entrance animation
     const ctx = gsap.context(() => {
       // Mic entrance
-      gsap.from(micRef.current?.position, {
-        y: -2,
-        opacity: 0,
-        duration: 1.5,
-        ease: 'power3.out',
-        delay: 0.3,
-      });
+      if (micRef.current) {
+        gsap.from(micRef.current.position, {
+          y: -2,
+          opacity: 0,
+          duration: 1.5,
+          ease: 'power3.out',
+          delay: 0.3,
+        });
 
-      gsap.from(micRef.current?.rotation, {
-        y: Math.PI,
-        duration: 2,
-        ease: 'power3.out',
-        delay: 0.3,
-      });
+        gsap.from(micRef.current.rotation, {
+          y: Math.PI,
+          duration: 2,
+          ease: 'power3.out',
+          delay: 0.3,
+        });
+      }
 
       // Title reveal
       gsap.from(titleRef.current, {
@@ -78,38 +74,27 @@ export function HeroSection3D() {
       });
 
       // Scroll parallax
-      gsap.to(micRef.current?.position, {
-        y: 0.5,
-        scrollTrigger: {
-          trigger: '[data-scroll-section="hero"]',
-          start: 'top top',
-          end: 'bottom top',
-          scrub: 1,
-        },
-      });
-
-      gsap.to(micRef.current?.rotation, {
-        x: -0.2,
-        scrollTrigger: {
-          trigger: '[data-scroll-section="hero"]',
-          start: 'top top',
-          end: 'bottom top',
-          scrub: 1,
-        },
-      });
-
-      // Particle intensity
-      gsap.to({}, {
-        scrollTrigger: {
-          trigger: '[data-scroll-section="hero"]',
-          start: 'top top',
-          end: 'bottom top',
-          scrub: 1,
-          onUpdate: (self) => {
-            // Particle density increases
+      if (micRef.current) {
+        gsap.to(micRef.current.position, {
+          y: 0.5,
+          scrollTrigger: {
+            trigger: '[data-scroll-section="hero"]',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1,
           },
-        },
-      });
+        });
+
+        gsap.to(micRef.current.rotation, {
+          x: -0.2,
+          scrollTrigger: {
+            trigger: '[data-scroll-section="hero"]',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1,
+          },
+        });
+      }
     });
 
     return () => ctx.revert();
@@ -125,7 +110,6 @@ export function HeroSection3D() {
     }
 
     // Camera subtle drift
-    const { camera } = useThree();
     camera.position.x = Math.sin(t * 0.15) * 0.3;
     camera.position.y = 1.5 + Math.cos(t * 0.1) * 0.1;
     camera.lookAt(0, 1.2, 0);

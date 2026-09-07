@@ -8,5 +8,5 @@ export { DESIGN_TOKENS } from './designTokens';
 export * from './sections';
 export { createSM7BMicrophone, createSM7BSimplified } from './objects/MicrophoneSM7B';
 export { createSpeakerAvatar, SPEAKER_PRESETS, animateSpeakerAvatar } from './objects/SpeakerAvatars';
-export { AudioVisualizer, createVisualizerBars } from './objects/AudioVisualizer';
-export { createAtmosphereParticles, createFloatingOrbs, createStudioLighting, createDustMotes } from './objects/Atmosphere';
+export { createVisualizerBars } from './objects/AudioVisualizer';
+export { createAtmosphereParticles, createFloatingOrbs, createStudioLighting, createDustMotes, createEnvironment, createLightRays } from './objects/Atmosphere';
