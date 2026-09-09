@@ -11,9 +11,7 @@ import {
   Html,
   ScrollControls,
   useScroll,
-  Environment,
   Effects,
-  ContactShadows,
 } from '@react-three/drei';
 import {
   Bloom,
@@ -23,7 +21,7 @@ import {
   DepthOfField,
 } from '@react-three/postprocessing';
 import * as THREE from 'three';
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -34,12 +32,6 @@ import { createVisualizerBars } from './objects/AudioVisualizer';
 import { createAtmosphereParticles, createFloatingOrbs, createLightRays, createStudioLighting, createEnvironment, createDustMotes } from './objects/Atmosphere';
 
 gsap.registerPlugin(ScrollTrigger);
-
-// Lazy-loaded section components
-const HeroSection3D = lazy(() => import('./sections/HeroSection3D').then(m => ({ default: m.HeroSection3D })));
-const FeaturesSection3D = lazy(() => import('./sections/FeaturesSection3D').then(m => ({ default: m.FeaturesSection3D })));
-const SpeakersSection3D = lazy(() => import('./sections/SpeakersSection3D').then(m => ({ default: m.SpeakersSection3D })));
-const CTASection3D = lazy(() => import('./sections/CTASection3D').then(m => ({ default: m.CTASection3D })));
 
 interface Experience3DProps {
   className?: string;
@@ -179,7 +171,6 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
               focusDistance={4}
               focalLength={0.05}
               bokehScale={2}
-              aperture={0.001}
             />
           </Effects>
         )}
@@ -342,7 +333,7 @@ function ExperienceScene({
 
     // Animate orbs
     if (orbsRef.current) {
-      orbsRef.current.children.forEach((orb: THREE.Mesh) => {
+      orbsRef.current.children.forEach((orb) => {
         const ud = orb.userData as { basePosition: THREE.Vector3; speed: number; phase: number; rotationSpeed?: number } | undefined;
         if (ud) {
           orb.position.x = ud.basePosition.x + Math.sin(timeRef.current * ud.speed + ud.phase) * 0.5;
@@ -355,12 +346,14 @@ function ExperienceScene({
 
     // Animate light rays
     if (lightRaysRef.current) {
-      lightRaysRef.current.children.forEach((ray: THREE.Mesh) => {
+      lightRaysRef.current.children.forEach((ray) => {
         const ud = ray.userData as { baseRotation: number; speed: number } | undefined;
         if (ud) {
           ray.rotation.z = ud.baseRotation + Math.sin(timeRef.current * ud.speed) * 0.1;
-          const mat = ray.material as THREE.MeshBasicMaterial;
-          mat.opacity = 0.02 + Math.sin(timeRef.current * 0.5) * 0.01;
+          if ('material' in ray) {
+            const mat = (ray as THREE.Mesh).material as THREE.MeshBasicMaterial;
+            mat.opacity = 0.02 + Math.sin(timeRef.current * 0.5) * 0.01;
+          }
         }
       });
     }
@@ -381,25 +374,28 @@ function ExperienceScene({
 
     // Animate visualizer
     if (visualizerRef.current) {
-      visualizerRef.current.children.forEach((bar: THREE.Mesh, i) => {
-        if (bar.material) {
-          const freq = Math.sin(timeRef.current * 2 + i * 0.3) * 0.5 + 0.5;
-          const targetScale = 0.15 + freq * 2.5;
-          bar.scale.y = THREE.MathUtils.lerp(bar.scale.y, targetScale, 0.15);
-          
-          const hue = 0.1 + (1 - i / 32) * 0.6;
-          const mat = bar.material as THREE.MeshStandardMaterial;
-          mat.color.setHSL(hue, 0.8, 0.5);
-          mat.emissive.setHSL(hue, 0.8, 0.3);
-          mat.emissiveIntensity = Math.sin(timeRef.current * 3 + i) * 0.3 + 0.5;
+      visualizerRef.current.children.forEach((bar, i) => {
+        if ('material' in bar) {
+          const mesh = bar as THREE.Mesh;
+          if (mesh.material) {
+            const freq = Math.sin(timeRef.current * 2 + i * 0.3) * 0.5 + 0.5;
+            const targetScale = 0.15 + freq * 2.5;
+            bar.scale.y = THREE.MathUtils.lerp(bar.scale.y, targetScale, 0.15);
+            
+            const hue = 0.1 + (1 - i / 32) * 0.6;
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            mat.color.setHSL(hue, 0.8, 0.5);
+            mat.emissive.setHSL(hue, 0.8, 0.3);
+            mat.emissiveIntensity = Math.sin(timeRef.current * 3 + i) * 0.3 + 0.5;
+          }
         }
       });
     }
 
     // Animate speaker avatars
-    speakerAvatarsRef.current.forEach((avatar, i) => {
+    speakerAvatarsRef.current.forEach((avatar) => {
       const scrollSectionProgress = sectionProgressRef.current.speakers || 0;
-      const isHovered = false; // Simplified for now
+      const isHovered = false;
       animateSpeakerAvatar(avatar, state.clock.getElapsedTime(), scrollSectionProgress, isHovered);
     });
 
@@ -457,4 +453,4 @@ function ScrollCamera() {
   return <perspectiveCamera ref={cameraRef} position={[4, 1.5, 4]} fov={45} />;
 }
 
-export { Experience3D };
+// Named export already on function declaration above

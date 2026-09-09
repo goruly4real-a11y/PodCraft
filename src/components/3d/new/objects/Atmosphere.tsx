@@ -226,7 +226,7 @@ export function FloatingOrbs({ count = 8 }: { count?: number }) {
     let frameId: number;
     const animate = (time: number) => {
       const t = time * 0.001;
-      orbsRef.current.forEach((mesh, i) => {
+      orbsRef.current.forEach((mesh) => {
         if (!mesh.userData.basePosition) return;
         mesh.position.x = mesh.userData.basePosition.x + Math.sin(t * mesh.userData.speed + mesh.userData.phase) * 0.5;
         mesh.position.y = mesh.userData.basePosition.y + Math.cos(t * mesh.userData.speed + mesh.userData.phase) * 0.3;

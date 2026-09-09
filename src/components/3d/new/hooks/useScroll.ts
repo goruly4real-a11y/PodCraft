@@ -12,22 +12,20 @@ export function useScrollSmoother() {
   useEffect(() => {
     if (!wrapperRef.current || !contentRef.current) return;
 
-    const smoother = gsap.utils.smoothScroll({
-      wrapper: wrapperRef.current,
-      content: contentRef.current,
-      smooth: 1.5,
-      effects: true,
-      normalizeScroll: true,
-      ignoreMobileResize: true,
-      onUpdate: () => {
-        ScrollTrigger.refresh();
-      },
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        scroller: wrapperRef.current!,
+        trigger: contentRef.current!,
+        onUpdate: () => {
+          ScrollTrigger.refresh();
+        },
+      });
     });
 
     setIsInitialized(true);
 
     return () => {
-      smoother?.kill();
+      ctx.revert();
       ScrollTrigger.getAll().forEach(t => t.kill());
     };
   }, []);

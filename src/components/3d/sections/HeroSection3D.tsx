@@ -26,7 +26,7 @@ export function HeroSection3D() {
 
     // Find microphone in scene
     const mic = scene.getObjectByName('SM7B') || scene.getObjectByName('SM7BSimple');
-    if (mic) micRef.current = mic;
+    if (mic) micRef.current = mic as THREE.Group;
 
     // GSAP entrance animation
     const ctx = gsap.context(() => {

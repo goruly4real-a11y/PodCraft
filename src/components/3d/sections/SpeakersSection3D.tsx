@@ -40,7 +40,7 @@ export function SpeakersSection3D() {
     });
 
     // GSAP entrance
-    const ctx = gsap.context(() => {
+    gsap.context(() => {
       avatarsRef.current.forEach((avatar, i) => {
         gsap.from(avatar.position, {
           y: -1,

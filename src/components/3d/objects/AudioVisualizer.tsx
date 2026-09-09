@@ -15,7 +15,7 @@ interface AudioVisualizerProps {
 
 export function AudioVisualizer({ enabled = true, position = [0, -1.5, 1.2], scale = 1 }: AudioVisualizerProps) {
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const barsRef = useRef<THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>[]>([]);
+  const barsRef = useRef<THREE.Mesh[]>([]);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {

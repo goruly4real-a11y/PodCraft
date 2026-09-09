@@ -403,8 +403,8 @@ function getClothingColor(personality: string): number {
 export function animateSpeakerAvatar(
   avatar: THREE.Group,
   time: number,
-  scrollProgress: number,
-  isHovered: boolean = false,
+  _scrollProgress: number,
+  _isHovered: boolean = false,
   lookTarget: THREE.Vector3 = new THREE.Vector3(0, 0.15, 1)
 ): void {
   const ud = avatar.userData as {
@@ -423,7 +423,7 @@ export function animateSpeakerAvatar(
   
   if (!ud) return;
 
-  const { eyeMeshes, eyelids, mouthMesh, hairGroup, browGroup, headGroup } = ud;
+  const { eyeMeshes, headGroup } = ud;
 
   // Blinking
   if (!ud.isBlinking && Math.random() < 0.003) {
@@ -461,7 +461,8 @@ export function animateSpeakerAvatar(
 
   // Hair sway
   if (ud.hairGroup) {
-    ud.hairGroup.children.forEach((strand: THREE.Mesh) => {
+    ud.hairGroup.children.forEach((strand) => {
+      if (!('userData' in strand)) return;
       const ud2 = strand.userData as { basePosition: THREE.Vector3; swayPhase: number; swaySpeed: number } | undefined;
       if (ud2) {
         const swayX = Math.sin(time * ud2.swaySpeed + ud2.swayPhase) * 0.01;
@@ -491,27 +492,18 @@ export function animateSpeakerAvatar(
   }
 
   const innerRing = avatar.getObjectByName('innerGlowRing');
-  if (innerRing) {
+  if (innerRing && 'material' in innerRing) {
     innerRing.rotation.z = -time * 0.03;
-    const mat = innerRing.material as THREE.MeshBasicMaterial;
+    const mat = (innerRing as THREE.Mesh).material as THREE.MeshBasicMaterial;
     mat.opacity = 0.3 + Math.sin(time * 2) * 0.1;
   }
 
   // Hover reaction
-  if (false) { // isHovered parameter not used currently
-    avatar.scale.setScalar(1.02);
-    const ring2 = avatar.getObjectByName('accentRing');
-    if (ring2) {
-      const mat = ring2.material as THREE.MeshPhysicalMaterial;
-      mat.emissiveIntensity = 0.3;
-    }
-  } else {
-    avatar.scale.setScalar(1);
-    const ring2 = avatar.getObjectByName('accentRing');
-    if (ring2) {
-      const mat = ring2.material as THREE.MeshPhysicalMaterial;
-      mat.emissiveIntensity = 0.1;
-    }
+  avatar.scale.setScalar(1);
+  const ring2 = avatar.getObjectByName('accentRing');
+  if (ring2 && 'material' in ring2) {
+    const mat = (ring2 as THREE.Mesh).material as THREE.MeshPhysicalMaterial;
+    mat.emissiveIntensity = 0.1;
   }
 }
 

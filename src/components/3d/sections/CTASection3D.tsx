@@ -15,7 +15,6 @@ gsap.registerPlugin(ScrollTrigger);
 export function CTASection3D() {
   const { scene } = useThree();
   const episodeRef = useRef<THREE.Group | null>(null);
-  const particlesRef = useRef<THREE.Points | null>(null);
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -78,8 +77,6 @@ export function CTASection3D() {
     scene.add(episode);
 
     // Burst particles on CTA
-    const burstCount = 200;
-    const burstGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(200 * 3);
     const velocities = new Float32Array(200 * 3);
     
