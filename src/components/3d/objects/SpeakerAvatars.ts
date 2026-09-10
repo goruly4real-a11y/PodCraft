@@ -423,7 +423,7 @@ export function animateSpeakerAvatar(
   
   if (!ud) return;
 
-  const { eyeMeshes, headGroup } = ud;
+  const { eyeMeshes } = ud;
 
   // Blinking
   if (!ud.isBlinking && Math.random() < 0.003) {
