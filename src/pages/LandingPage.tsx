@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Mic, Github, Twitter, Menu, X } from 'lucide-react';
-import { Experience3D } from '@/components/3d';
+import { StudioConsoleLanding } from '@/components/landing/StudioConsoleLanding';
 import { Waveform } from '@/components/animations/Waveform';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -82,9 +82,7 @@ export default function LandingPage() {
       </nav>
 
       <main>
-        <Experience3D
-          onSectionChange={(section) => console.log('Section:', section)}
-        />
+        <StudioConsoleLanding />
 
         <footer
           ref={footerRef}
