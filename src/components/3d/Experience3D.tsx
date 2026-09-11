@@ -87,7 +87,7 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
     return (
       <div 
         className={className}
-        style={{ ...style, width: '100%', height: '100%', minHeight: '600px', 
+        style={{ ...style, width: '100%', height: '100vh', 
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: '#0B0F19', color: '#64748B' }}
         role="img"
@@ -112,8 +112,7 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
       style={{ 
         ...style, 
         width: '100%', 
-        height: '100%', 
-        minHeight: '100vh',
+        height: '100vh',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -129,13 +128,14 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
           powerPreference: 'high-performance',
         }}
         shadows={!isLowEnd}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         onCreated={({ gl }) => {
           gl.setClearColor(0x0B0F19, 1);
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.0;
         }}
       >
-        {/* Scroll-controlled camera + scene (ExperienceScene must be inside ScrollControls for useScroll) */}
+        {/* Scroll-controlled camera + scene */}
         <ScrollControls
           pages={4}
           distance={1}
@@ -174,22 +174,6 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
           </Effects>
         )}
       </Canvas>
-
-      {/* Section markers for scroll sync */}
-      <div style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', height: '400vh', width: '1px' }}>
-        {['hero', 'features', 'speakers', 'cta'].map((section, i) => (
-          <div
-            key={section}
-            data-scroll-section={section}
-            style={{
-              position: 'absolute',
-              top: `${i * 25}%`,
-              height: '25%',
-              width: '1px',
-            }}
-          />
-        ))}
-      </div>
     </div>
   );
 }
