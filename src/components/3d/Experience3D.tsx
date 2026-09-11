@@ -135,23 +135,22 @@ export function Experience3D({ className, style, onSectionChange }: Experience3D
           gl.toneMappingExposure = 1.0;
         }}
       >
-        <Suspense fallback={<Html center>Loading Studio…</Html>}>
-          <ExperienceScene 
-            perfSettings={perfSettings}
-            onSectionChange={onSectionChange}
-            sectionProgressRef={sectionProgressRef}
-            currentSectionRef={currentSectionRef}
-            scrollProgressRef={scrollProgressRef}
-          />
-        </Suspense>
-        
-        {/* Scroll-controlled camera */}
+        {/* Scroll-controlled camera + scene (ExperienceScene must be inside ScrollControls for useScroll) */}
         <ScrollControls
           pages={4}
           distance={1}
           infinite={false}
           horizontal={false}
         >
+          <Suspense fallback={<Html center>Loading Studio…</Html>}>
+            <ExperienceScene 
+              perfSettings={perfSettings}
+              onSectionChange={onSectionChange}
+              sectionProgressRef={sectionProgressRef}
+              currentSectionRef={currentSectionRef}
+              scrollProgressRef={scrollProgressRef}
+            />
+          </Suspense>
           <ScrollCamera />
         </ScrollControls>
         
@@ -319,6 +318,7 @@ function ExperienceScene({
   // Scroll progress tracking
   useFrame((state, delta) => {
     timeRef.current += delta;
+    if (!scroll) return;
     const progress = scroll.offset;
     scrollProgressRef.current = progress;
 
@@ -430,7 +430,7 @@ function ScrollCamera() {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   useFrame(() => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current || !scroll) return;
     const progress = scroll.offset;
 
     // Cinematic camera path
