@@ -5,8 +5,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { 
-  Play, Pause, Mic, Sparkles, Sliders, Volume2, ShieldCheck, 
-  Zap, Radio, Disc, ArrowRight, CheckCircle2, ChevronRight, UserPlus
+  Play, Pause, Mic, Sparkles, Sliders, 
+  Zap, Radio, CheckCircle2, ChevronRight, UserPlus
 } from 'lucide-react';
 import { Waveform } from '@/components/animations/Waveform';
 
@@ -16,7 +16,6 @@ export function StudioConsoleLanding() {
   const [warmthVal, setWarmthVal] = useState(75);
   const [speakerBalVal, setSpeakerBalVal] = useState(50);
   const [clarityVal, setClarityVal] = useState(88);
-  const [activeSpeaker, setActiveSpeaker] = useState<'alex' | 'sarah'>('alex');
   const [durationMins, setDurationMins] = useState(15);
   const [speakerCount, setSpeakerCount] = useState(2);
   const [audioProgress, setAudioProgress] = useState(0);
@@ -25,7 +24,7 @@ export function StudioConsoleLanding() {
 
   // Simulated audio progress loop when playing
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isPlaying) {
       interval = setInterval(() => {
         setAudioProgress((prev) => {
